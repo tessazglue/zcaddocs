@@ -1,0 +1,289 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.router.database &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pnr.router.database</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Router App Database Manager</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pnr.router.tests.netlist</span> <span class="k">import</span> <span class="n">MERC_B_BALL</span> <span class="k">as</span> <span class="n">test_ball</span>
+<span class="kn">from</span> <span class="nn">pnr.router.tests.netlist</span> <span class="k">import</span> <span class="n">MERC_B_COORD</span> <span class="k">as</span> <span class="n">test_coord</span>
+<span class="kn">from</span> <span class="nn">pnr.router.assets</span> <span class="k">import</span> <span class="n">Ball</span><span class="p">,</span> <span class="n">BumpCoord</span>
+<span class="kn">from</span> <span class="nn">system.models</span> <span class="k">import</span> <span class="n">Sys</span>
+<span class="kn">from</span> <span class="nn">visual.models</span> <span class="k">import</span> <span class="n">Placement</span>
+
+
+<div class="viewcode-block" id="Parser"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser">[docs]</a><span class="k">class</span> <span class="nc">Parser</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves System Information (netlist and placement) from the database and parses it into</span>
+<span class="sd">    proper data structures for the router program</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tilegrid - FAST TileGrid model</span>
+<span class="sd">        fnn_to_bid - Dictionary to map FNN to a list of uBumpIDs</span>
+<span class="sd">        bid_to_ball - Dictionary to map bid to a ball</span>
+<span class="sd">        bid_to_coord - Dictionary to map bid to a list of tile coordinates on tilegrid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">,</span> <span class="n">tilegrid</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span> <span class="o">=</span> <span class="n">sys_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span> <span class="o">=</span> <span class="n">tilegrid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="Parser.get_assets"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser.get_assets">[docs]</a>    <span class="k">def</span> <span class="nf">get_assets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the data structures to be utilised by router</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            TileGrid: tilegrid model</span>
+<span class="sd">            dict: dictionary of fnn to bid_list mappings</span>
+<span class="sd">            dict: dictionary of bid to ball mappings</span>
+<span class="sd">            dict: dictionary of bid to coord_list mappings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span></div>
+
+<div class="viewcode-block" id="Parser.get_system_info"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser.get_system_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_system_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper method to run all data retrieval methods</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_netlist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_placement</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Parser.get_netlist"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser.get_netlist">[docs]</a>    <span class="k">def</span> <span class="nf">get_netlist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses netlist retrieved from database to Ball objects, create dictionaries of</span>
+<span class="sd">        fnn to bid_list mappings</span>
+<span class="sd">        bid to ball mappings</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">())</span>
+        <span class="n">nets</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_sysnetlist</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">nets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">bump</span> <span class="ow">in</span> <span class="n">comp</span><span class="p">:</span>
+                <span class="n">bid</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">ubumpid</span>
+                <span class="n">fnn</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">fastnn</span><span class="p">)</span>
+                <span class="n">mpn</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">mpn</span>
+                <span class="n">pnum</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">pnum</span>
+                <span class="n">snn</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">sysnn</span>
+                <span class="n">fconn</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">fastconn</span>
+                <span class="n">tpu</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">tpu</span> <span class="o">==</span> <span class="s2">&quot;NULL&quot;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">tpu</span><span class="p">)</span>
+                <span class="n">tpd</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">tpd</span> <span class="o">==</span> <span class="s2">&quot;NULL&quot;</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">tpd</span><span class="p">)</span>
+                <span class="n">rprio</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bump</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">rpriority</span><span class="p">)</span>
+
+                <span class="n">ball</span> <span class="o">=</span> <span class="n">Ball</span><span class="p">(</span><span class="n">bid</span><span class="p">,</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">mpn</span><span class="p">,</span> <span class="n">pnum</span><span class="p">,</span> <span class="n">snn</span><span class="p">,</span> <span class="n">fconn</span><span class="p">,</span> <span class="n">tpu</span><span class="p">,</span> <span class="n">tpd</span><span class="p">,</span> <span class="n">rprio</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball</span>
+
+                <span class="k">if</span> <span class="n">fnn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">fnn</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bid</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">fnn</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">bid</span><span class="p">]</span></div>
+
+                <span class="c1"># print (&quot;{0: &lt;12}&quot;.format(&quot;BumpID=%d&quot; % bid) +</span>
+                <span class="c1">#        &quot;{0: &lt;18}&quot;.format(&quot;MPN=%s&quot; % mpn) +</span>
+                <span class="c1">#        &quot;{0: &lt;12}&quot;.format(&quot;PNUM=%s&quot; % pnum) +</span>
+                <span class="c1">#        &quot;{0: &lt;24}&quot;.format(&quot;NetName=%s&quot; % snn) +</span>
+                <span class="c1">#        &quot;{0: &lt;18}&quot;.format(&quot;FAST=%s&quot; % fconn) +</span>
+                <span class="c1">#        &quot;{0: &lt;12}&quot;.format(&quot;FNN=%d&quot; % fnn) +</span>
+                <span class="c1">#        &quot;{0: &lt;12}&quot;.format(&quot;PUP=%d&quot; % tpu) +</span>
+                <span class="c1">#        &quot;{0: &lt;12}&quot;.format(&quot;PDN=%d&quot; % tpd) +</span>
+                <span class="c1">#        &quot;Priority=%d&quot; % rprio)</span>
+
+<div class="viewcode-block" id="Parser.get_placement"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser.get_placement">[docs]</a>    <span class="k">def</span> <span class="nf">get_placement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses placement retrieved from database to Coord objects, create dictionaries of</span>
+<span class="sd">        bid to coord_list mappings</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">())</span>
+        <span class="n">nets</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_sysnetlist</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">nets</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">bump</span> <span class="ow">in</span> <span class="n">comp</span><span class="p">:</span>
+                <span class="n">tiles</span> <span class="o">=</span> <span class="n">Placement</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">sysnet</span><span class="o">=</span><span class="n">bump</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+                    <span class="n">bid</span> <span class="o">=</span> <span class="n">bump</span><span class="o">.</span><span class="n">ubumpid</span>
+                    <span class="n">row</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">cx</span>
+                    <span class="n">col</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">cy</span>
+
+                    <span class="n">coord</span> <span class="o">=</span> <span class="n">BumpCoord</span><span class="p">(</span><span class="n">bid</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
+                    <span class="n">fnn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span><span class="o">.</span><span class="n">fnn</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">set_tile_id</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">fnn</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">bid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">coord</span><span class="p">]</span></div>
+
+                    <span class="c1"># print (&quot;BID=%d,%d,%d&quot; % (bid, row, col))</span>
+
+<div class="viewcode-block" id="Parser.test_parser"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.Parser.test_parser">[docs]</a>    <span class="k">def</span> <span class="nf">test_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test method for Parser to simulate retrieving from database</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__test_netlist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__test_placement</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__test_netlist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># for bid, bump in stub.BALLS.items():</span>
+        <span class="k">for</span> <span class="n">bump</span> <span class="ow">in</span> <span class="n">test_ball</span><span class="p">:</span>
+            <span class="n">bid</span> <span class="o">=</span> <span class="n">bump</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ball</span> <span class="o">=</span> <span class="n">Ball</span><span class="p">(</span><span class="n">bump</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                        <span class="n">bump</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="n">bump</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball</span>
+
+            <span class="k">if</span> <span class="n">bump</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">bump</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bid</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">bump</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__test_placement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># for bid, v in stub.COORDS.items():</span>
+        <span class="c1">#     for v_c in v:</span>
+        <span class="k">for</span> <span class="n">v_c</span> <span class="ow">in</span> <span class="n">test_coord</span><span class="p">:</span>
+            <span class="n">bid</span> <span class="o">=</span> <span class="n">v_c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="n">BumpCoord</span><span class="p">(</span><span class="n">bid</span><span class="p">,</span> <span class="n">v_c</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v_c</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">fnn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span><span class="o">.</span><span class="n">fnn</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">set_tile_id</span><span class="p">(</span><span class="n">v_c</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v_c</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bid</span><span class="p">,</span> <span class="n">fnn</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">bid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">coord</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="VisualLoader"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.VisualLoader">[docs]</a><span class="k">class</span> <span class="nc">VisualLoader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load routed system back into database</span>
+<span class="sd">    [WIP]</span>
+<span class="sd">    TODO: BUILD ME</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="VisualLoader.commit_to_db"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.VisualLoader.commit_to_db">[docs]</a>    <span class="k">def</span> <span class="nf">commit_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper method to call all commit methods</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="VisualLoader.commit_row"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.VisualLoader.commit_row">[docs]</a>    <span class="k">def</span> <span class="nf">commit_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load all rowbit associations to database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="VisualLoader.commit_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.VisualLoader.commit_col">[docs]</a>    <span class="k">def</span> <span class="nf">commit_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load all column associations to database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="VisualLoader.commit_ubump"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.database.VisualLoader.commit_ubump">[docs]</a>    <span class="k">def</span> <span class="nf">commit_ubump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load all ubump associations to database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

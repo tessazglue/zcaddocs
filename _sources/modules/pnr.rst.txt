@@ -1,0 +1,11 @@
+PnR Algorithms
+**************
+
+.. toctree::
+   :maxdepth: 2
+
+   packer
+
+   placer
+
+   router

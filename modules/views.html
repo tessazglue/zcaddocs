@@ -1,0 +1,529 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Django Views &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PnR Algorithms" href="pnr.html" />
+    <link rel="prev" title="Django Models" href="models.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="django-views">
+<h1>Django Views<a class="headerlink" href="#django-views" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-chiplet.views">
+<span id="chiplet"></span><h2>Chiplet<a class="headerlink" href="#module-chiplet.views" title="Permalink to this headline">¶</a></h2>
+<p>Views of chiplet module - controls all pages within chiplet tab</p>
+<dl class="function">
+<dt id="chiplet.views.add_cfg">
+<code class="descclassname">chiplet.views.</code><code class="descname">add_cfg</code><span class="sig-paren">(</span><em>request</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#add_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.add_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a config - renders a list of configs if ‘GET’ request
+is received, and saves a config if ‘POST’ request is received.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.add_chiplet">
+<code class="descclassname">chiplet.views.</code><code class="descname">add_chiplet</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#add_chiplet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.add_chiplet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a chiplet - renders a chiplet form if ‘GET’ request
+is received, and saves a chiplet if ‘POST’ request is received.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.all_chiplets">
+<code class="descclassname">chiplet.views.</code><code class="descname">all_chiplets</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#all_chiplets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.all_chiplets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of all chiplets in the database</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.parse_request_cfg">
+<code class="descclassname">chiplet.views.</code><code class="descname">parse_request_cfg</code><span class="sig-paren">(</span><em>post_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#parse_request_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.parse_request_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse POST request dictionary to get ConfigIO object attributes.
+:param post_dict: post dictionary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary of ConfigIOs belonging to a Config
+e.g.
+{<blockquote>
+<div><dl class="docutils">
+<dt>”0”: {“tpu”: “NULL”,</dt>
+<dd>”tpd”: “1234”,
+…},</dd>
+<dt>”1”: {“tpu” <span class="classifier-delimiter">:</span> <span class="classifier">”NULL”,</span></dt>
+<dd>”tpd”: “NULL”,
+…},</dd>
+</dl>
+<p>…</p>
+</div></blockquote>
+<p>}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd>refactor to generalize parse_request functions for reuse</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.parse_request_io">
+<code class="descclassname">chiplet.views.</code><code class="descname">parse_request_io</code><span class="sig-paren">(</span><em>post_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#parse_request_io"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.parse_request_io" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse POST request dictionary of IOs to get IO object attributes.
+:param post_dict: post dictionary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary of IOs belonging to a chiplet
+e.g.
+{<blockquote>
+<div><dl class="docutils">
+<dt>”0”: {“pnum”: “A1”,</dt>
+<dd>”pname”: “VDD”,
+…},</dd>
+<dt>”1”: {“pnum” <span class="classifier-delimiter">:</span> <span class="classifier">”A2”,</span></dt>
+<dd>”pname”: “VSS”,
+…},</dd>
+</dl>
+<p>…</p>
+</div></blockquote>
+<p>}</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd>refactor to generalize parse_request functions for reuse</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.save_cfg">
+<code class="descclassname">chiplet.views.</code><code class="descname">save_cfg</code><span class="sig-paren">(</span><em>cid</em>, <em>cfg_dict</em>, <em>configname</em>, <em>proto</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#save_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.save_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save config and corresponding ConfigIOs into database
+:param cid: chiplet ID
+:param cfg_dict: dictionary of ConfigIOs and their attributes
+:param configname: name of config specified by user in form
+:param proto: protocol of config specified by user in form</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.save_chiplet_ios">
+<code class="descclassname">chiplet.views.</code><code class="descname">save_chiplet_ios</code><span class="sig-paren">(</span><em>chiplet</em>, <em>io_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#save_chiplet_ios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.save_chiplet_ios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save chiplet and corresponding IOs into database
+:param chiplet: chiplet object from form
+:param io_dict: dictionary of IOs and their attributes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.show_cfgios">
+<code class="descclassname">chiplet.views.</code><code class="descname">show_cfgios</code><span class="sig-paren">(</span><em>request</em>, <em>cid</em>, <em>cfgid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#show_cfgios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.show_cfgios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of configIOs of a particular chiplet config
+:param cid: chiplet ID
+:param cfgid: config ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">renders a list of all configIOs of that chiplet config</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.show_cfgs">
+<code class="descclassname">chiplet.views.</code><code class="descname">show_cfgs</code><span class="sig-paren">(</span><em>request</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#show_cfgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.show_cfgs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of configs of a particular chiplet
+:param cid: chiplet ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">renders a list of all configs of that chiplet</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="chiplet.views.show_ios">
+<code class="descclassname">chiplet.views.</code><code class="descname">show_ios</code><span class="sig-paren">(</span><em>request</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/chiplet/views.html#show_ios"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#chiplet.views.show_ios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of IOs of a particular chiplet
+:param cid: chiplet ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">renders a list of all IOs of that chiplet</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-system.views">
+<span id="system"></span><h2>System<a class="headerlink" href="#module-system.views" title="Permalink to this headline">¶</a></h2>
+<p>Views of system module - controls all pages within system tab</p>
+<dl class="function">
+<dt id="system.views.all_systems">
+<code class="descclassname">system.views.</code><code class="descname">all_systems</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#all_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.all_systems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of all systems in the database that are not yet run</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.create_system">
+<code class="descclassname">system.views.</code><code class="descname">create_system</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#create_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.create_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all chiplets and corresponding configs for user to select.
+Renders full netlist if ‘POST’ request is received.
+.. note:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">store</span> <span class="n">sysname</span> <span class="ow">and</span> <span class="n">syscomponent</span> <span class="ow">in</span> <span class="n">request</span> <span class="n">session</span> <span class="k">for</span> <span class="n">use</span>
+  <span class="ow">in</span> <span class="n">save_netlist</span> <span class="n">view</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd><ul class="first last simple">
+<li>enable rotation of chiplet on visualization</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.delete_system">
+<code class="descclassname">system.views.</code><code class="descname">delete_system</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#delete_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.delete_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes a system by its ID.
+:param sys_id: ID of system specified in URL</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.dld_placement_csv">
+<code class="descclassname">system.views.</code><code class="descname">dld_placement_csv</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#dld_placement_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.dld_placement_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download placement grid csv
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.dld_ubump_csv">
+<code class="descclassname">system.views.</code><code class="descname">dld_ubump_csv</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#dld_ubump_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.dld_ubump_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download placement ubump id mapping csv
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.edit_netlist">
+<code class="descclassname">system.views.</code><code class="descname">edit_netlist</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#edit_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.edit_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Editing netlist to enter fastnn is deprecated.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sys_id</strong> – ID of system specified in URL</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.get_chiplets">
+<code class="descclassname">system.views.</code><code class="descname">get_chiplets</code><span class="sig-paren">(</span><em>chip_cids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#get_chiplets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.get_chiplets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all chiplet objects based on their CIDs.
+:param chip_cids: list of chiplet CIDs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of chiplet objects</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">chip_set</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd><ul class="first last simple">
+<li>move this to custom model method</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.get_configs">
+<code class="descclassname">system.views.</code><code class="descname">get_configs</code><span class="sig-paren">(</span><em>request_dict</em>, <em>chiplet_raw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#get_configs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.get_configs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all config names.
+:param request_dict: POST request dictionary to get config name
+:param chiplet_raw: list of chiplet CIDs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of config names</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">cfg_list</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd><ul class="first last simple">
+<li>move this to custom model method</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.get_full_netlist">
+<code class="descclassname">system.views.</code><code class="descname">get_full_netlist</code><span class="sig-paren">(</span><em>request_dict</em>, <em>chiplet_raw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#get_full_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.get_full_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full netlist based on POST request and list of chiplet CIDs
+:param request_dict: POST request dictionary to get config name
+:param chiplet_raw: list of chiplet CIDs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of dictionaries</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">chiplet_selection</td>
+</tr>
+</tbody>
+</table>
+<p>Dict output format: (each row of net list is a dictionary)
+[{</p>
+<blockquote>
+<div>‘mpn’: mpn,
+‘cid’: cid,
+‘pname’: pname,
+‘pnum’: pnum,
+‘sigt’: sigt,
+…..</div></blockquote>
+<p>}]</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.parse_request">
+<code class="descclassname">system.views.</code><code class="descname">parse_request</code><span class="sig-paren">(</span><em>post_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#parse_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.parse_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse POST request dictionary to get dictionary of all elements
+:param post_dict: POST request dictionary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of config names</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">fields</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Return Format:</dt>
+<dd>{
+&lt;num&gt;: {&lt;attr&gt;:&lt;value&gt;, &lt;attr&gt;:&lt;value&gt;…},
+&lt;num&gt;: {&lt;attr&gt;:&lt;value&gt;, &lt;attr&gt;:&lt;value&gt;…}
+…
+}</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.run_system">
+<code class="descclassname">system.views.</code><code class="descname">run_system</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#run_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.run_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass sys_id to celery task for system-run to happen in background.
+Update system run_state to 1 (which is IN-PROGRESS).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.save_netlist">
+<code class="descclassname">system.views.</code><code class="descname">save_netlist</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#save_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.save_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs packer to get packing information and save system,
+system components and system netlist.
+.. note:: ubumpID defaults to -1, will be updated in placer.</p>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd><ul class="first last simple">
+<li>Sys hardcoded to S for now as app does not support other sizes</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.show_netlist">
+<code class="descclassname">system.views.</code><code class="descname">show_netlist</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#show_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.show_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show netlist of a system.
+:param sys_id: ID of system specified in URL</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.show_placement">
+<code class="descclassname">system.views.</code><code class="descname">show_placement</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#show_placement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.show_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all chiplets and packing information and renders visualization
+if ‘GET’ request is received. Saves packing changes if ‘POST’ request
+is received.
+:param sys_id: ID of system specified in URL</p>
+<dl class="docutils">
+<dt>To Do:</dt>
+<dd><ul class="first last simple">
+<li>enable rotation of chiplet on visualization</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="system.views.show_schematics">
+<code class="descclassname">system.views.</code><code class="descname">show_schematics</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/system/views.html#show_schematics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#system.views.show_schematics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all chiplets and connection info and renders visualization.
+:param sys_id: ID of system specified in URL</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-visual.views">
+<span id="visual"></span><h2>Visual<a class="headerlink" href="#module-visual.views" title="Permalink to this headline">¶</a></h2>
+<p>Views of system module - controls all pages within visual tab</p>
+<dl class="function">
+<dt id="visual.views.all_systems_ran">
+<code class="descclassname">visual.views.</code><code class="descname">all_systems_ran</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/visual/views.html#all_systems_ran"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#visual.views.all_systems_ran" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows a list of all systems in the database that are running in progress
+or already run.
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="visual.views.delete_system">
+<code class="descclassname">visual.views.</code><code class="descname">delete_system</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/visual/views.html#delete_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#visual.views.delete_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the system from database and from router_out.
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="visual.views.download_zip">
+<code class="descclassname">visual.views.</code><code class="descname">download_zip</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/visual/views.html#download_zip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#visual.views.download_zip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zips the sys_id folder from router_out, and allows user to download it.
+Removes the temp zip file.
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="visual.views.show_system_netlist">
+<code class="descclassname">visual.views.</code><code class="descname">show_system_netlist</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/visual/views.html#show_system_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#visual.views.show_system_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the netlist of the system.
+:param sys_id: ID of system</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="visual.views.show_system_visual">
+<code class="descclassname">visual.views.</code><code class="descname">show_system_visual</code><span class="sig-paren">(</span><em>request</em>, <em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/visual/views.html#show_system_visual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#visual.views.show_system_visual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the system visualization.
+:param sys_id: ID of system</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.html">Django Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Django Views</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-chiplet.views">Chiplet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-system.views">System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-visual.views">Visual</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="models.html" title="previous chapter">Django Models</a></li>
+      <li>Next: <a href="pnr.html" title="next chapter">PnR Algorithms</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/views.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

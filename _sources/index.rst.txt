@@ -1,0 +1,25 @@
+.. zCAD documentation master file, created by
+   sphinx-quickstart on Thu Jul  6 18:00:07 2017.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+zCAD Code Documentation
+================================
+
+.. toctree::
+   :maxdepth: 2
+
+   modules/models
+
+   modules/views
+
+   modules/pnr
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

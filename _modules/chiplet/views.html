@@ -1,0 +1,401 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>chiplet.views &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for chiplet.views</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Views of chiplet module - controls all pages within chiplet tab</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="k">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render</span><span class="p">,</span> <span class="n">get_list_or_404</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="k">import</span> <span class="n">HttpResponse</span>
+
+<span class="kn">from</span> <span class="nn">chiplet.models</span> <span class="k">import</span> <span class="n">Chiplet</span><span class="p">,</span> <span class="n">IO</span><span class="p">,</span> <span class="n">Config</span><span class="p">,</span> <span class="n">ConfigIO</span>
+<span class="kn">from</span> <span class="nn">chiplet.forms</span> <span class="k">import</span> <span class="n">ChipletForm</span>
+<span class="kn">from</span> <span class="nn">chiplet.serializers</span> <span class="k">import</span> <span class="n">ChipletSerializer</span><span class="p">,</span> <span class="n">IOSerializer</span><span class="p">,</span> <span class="n">ConfigSerializer</span><span class="p">,</span> <span class="n">ConfigIOSerializer</span>
+
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="k">import</span> <span class="n">generics</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">renderers</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="k">import</span> <span class="n">api_view</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="k">import</span> <span class="n">Response</span>
+
+
+<span class="k">class</span> <span class="nc">ChipletList</span><span class="p">(</span><span class="n">generics</span><span class="o">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">ChipletSerializer</span>
+
+
+<span class="k">class</span> <span class="nc">IOList</span><span class="p">(</span><span class="n">generics</span><span class="o">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">IOSerializer</span>
+
+    <span class="k">def</span> <span class="nf">get_serializer_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cid&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cid&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">IO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_serializer_context</span><span class="p">()))</span>
+
+
+<span class="k">class</span> <span class="nc">ConfigList</span><span class="p">(</span><span class="n">generics</span><span class="o">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">ConfigSerializer</span>
+
+    <span class="k">def</span> <span class="nf">get_serializer_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cid&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cid&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Config</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_serializer_context</span><span class="p">()))</span>
+
+
+<span class="k">class</span> <span class="nc">ConfigIOList</span><span class="p">(</span><span class="n">generics</span><span class="o">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">ConfigIOSerializer</span>
+
+    <span class="k">def</span> <span class="nf">get_serializer_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cid&#39;</span><span class="p">]</span>
+        <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cfgid&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cfgid&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ConfigIO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">cfg</span><span class="o">=</span><span class="n">Config</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_serializer_context</span><span class="p">()))</span>
+
+
+<div class="viewcode-block" id="all_chiplets"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.all_chiplets">[docs]</a><span class="k">def</span> <span class="nf">all_chiplets</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of all chiplets in the database</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chiplet_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">chiplets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">chiplets</span><span class="p">:</span>
+        <span class="n">chiplet_obj</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;mpn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">mpn</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;cid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">cid</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;x_dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;y_dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;z_dim&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">z_dim</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;num_balls&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">num_balls</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;io_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">get_io_count</span><span class="p">()</span>
+        <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;cfg_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span><span class="o">.</span><span class="n">get_cfg_count</span><span class="p">()</span>
+        <span class="n">chiplet_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chiplet_obj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/chipletList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;chipletList&#39;</span><span class="p">:</span> <span class="n">chiplet_list</span>
+    <span class="p">})</span></div>
+
+<div class="viewcode-block" id="show_ios"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.show_ios">[docs]</a><span class="k">def</span> <span class="nf">show_ios</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of IOs of a particular chiplet</span>
+<span class="sd">    Args:</span>
+<span class="sd">        cid: chiplet ID</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        renders a list of all IOs of that chiplet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">cid</span><span class="p">)</span>
+    <span class="n">ioList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_ios</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/ioList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;chiplet&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">mpn</span><span class="p">,</span>
+        <span class="s1">&#39;ioList&#39;</span><span class="p">:</span> <span class="n">ioList</span><span class="p">,</span>
+    <span class="p">})</span></div>
+
+<div class="viewcode-block" id="show_cfgs"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.show_cfgs">[docs]</a><span class="k">def</span> <span class="nf">show_cfgs</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of configs of a particular chiplet</span>
+<span class="sd">    Args:</span>
+<span class="sd">        cid: chiplet ID</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        renders a list of all configs of that chiplet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">cid</span><span class="p">)</span>
+    <span class="n">cfg_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_cfgs</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/cfgList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;chiplet&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">mpn</span><span class="p">,</span>
+        <span class="s1">&#39;cfgList&#39;</span><span class="p">:</span> <span class="n">cfg_list</span><span class="p">,</span>
+        <span class="s1">&#39;cid&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span>
+    <span class="p">})</span></div>
+
+<div class="viewcode-block" id="show_cfgios"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.show_cfgios">[docs]</a><span class="k">def</span> <span class="nf">show_cfgios</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">cfgid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of configIOs of a particular chiplet config</span>
+<span class="sd">    Args:</span>
+<span class="sd">        cid: chiplet ID</span>
+<span class="sd">        cfgid: config ID</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        renders a list of all configIOs of that chiplet config</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg_id</span><span class="o">=</span><span class="n">cfgid</span><span class="p">)</span>
+    <span class="n">cfgio_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_cfgios</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/cfgioList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;chiplet&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">mpn</span><span class="p">,</span>
+        <span class="s1">&#39;cid&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span>
+        <span class="s1">&#39;cfg&#39;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">cfgname</span><span class="p">,</span>
+        <span class="s1">&#39;cfgioList&#39;</span><span class="p">:</span> <span class="n">cfgio_list</span><span class="p">,</span>
+    <span class="p">})</span></div>
+
+<div class="viewcode-block" id="add_chiplet"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.add_chiplet">[docs]</a><span class="k">def</span> <span class="nf">add_chiplet</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to add a chiplet - renders a chiplet form if &#39;GET&#39; request</span>
+<span class="sd">    is received, and saves a chiplet if &#39;POST&#39; request is received.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ChipletForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">chiplet</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">post_dict</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">parse_request_io</span><span class="p">(</span><span class="n">post_dict</span><span class="p">)</span>
+            <span class="n">save_chiplet_ios</span><span class="p">(</span><span class="n">chiplet</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">all_chiplets</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="n">form</span><span class="o">.</span><span class="n">errors</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">ChipletForm</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/addChiplet.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;form&#39;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="add_cfg"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.add_cfg">[docs]</a><span class="k">def</span> <span class="nf">add_cfg</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to add a config - renders a list of configs if &#39;GET&#39; request</span>
+<span class="sd">    is received, and saves a config if &#39;POST&#39; request is received.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">post_dict</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">configname</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s2">&quot;configname&quot;</span><span class="p">]</span>
+        <span class="n">proto</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s2">&quot;proto&quot;</span><span class="p">]</span>
+        <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">parse_request_cfg</span><span class="p">(</span><span class="n">post_dict</span><span class="p">)</span>
+        <span class="n">save_cfg</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">cfg_dict</span><span class="p">,</span> <span class="n">configname</span><span class="p">,</span> <span class="n">proto</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">show_cfgs</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cid</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">cid</span><span class="p">)</span>
+        <span class="n">io_list</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get_ios</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;chiplet/addCfg.html&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;chiplet&#39;</span><span class="p">:</span> <span class="n">c</span><span class="p">,</span> <span class="s1">&#39;ioList&#39;</span><span class="p">:</span> <span class="n">io_list</span><span class="p">})</span></div>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Util functions supporting view</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="parse_request_io"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.parse_request_io">[docs]</a><span class="k">def</span> <span class="nf">parse_request_io</span><span class="p">(</span><span class="n">post_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse POST request dictionary of IOs to get IO object attributes.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        post_dict: post dictionary</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dictionary of IOs belonging to a chiplet</span>
+<span class="sd">        e.g.</span>
+<span class="sd">        {</span>
+<span class="sd">            &quot;0&quot;: {&quot;pnum&quot;: &quot;A1&quot;,</span>
+<span class="sd">                  &quot;pname&quot;: &quot;VDD&quot;,</span>
+<span class="sd">                  ...},</span>
+<span class="sd">            &quot;1&quot;: {&quot;pnum&quot; : &quot;A2&quot;,</span>
+<span class="sd">                  &quot;pname&quot;: &quot;VSS&quot;,</span>
+<span class="sd">                  ...},</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        refactor to generalize parse_request functions for reuse</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">post_dict</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># try if the post input is for the IO (starts with a number)</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># split string number#io_attr</span>
+            <span class="n">klist</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">obj</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+<div class="viewcode-block" id="parse_request_cfg"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.parse_request_cfg">[docs]</a><span class="k">def</span> <span class="nf">parse_request_cfg</span><span class="p">(</span><span class="n">post_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse POST request dictionary to get ConfigIO object attributes.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        post_dict: post dictionary</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dictionary of ConfigIOs belonging to a Config</span>
+<span class="sd">        e.g.</span>
+<span class="sd">        {</span>
+<span class="sd">            &quot;0&quot;: {&quot;tpu&quot;: &quot;NULL&quot;,</span>
+<span class="sd">                  &quot;tpd&quot;: &quot;1234&quot;,</span>
+<span class="sd">                  ...},</span>
+<span class="sd">            &quot;1&quot;: {&quot;tpu&quot; : &quot;NULL&quot;,</span>
+<span class="sd">                  &quot;tpd&quot;: &quot;NULL&quot;,</span>
+<span class="sd">                  ...},</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        refactor to generalize parse_request functions for reuse</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">post_dict</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">klist</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="n">pnum</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pnum</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">pnum</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">obj</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">pnum</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+<div class="viewcode-block" id="save_chiplet_ios"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.save_chiplet_ios">[docs]</a><span class="k">def</span> <span class="nf">save_chiplet_ios</span><span class="p">(</span><span class="n">chiplet</span><span class="p">,</span> <span class="n">io_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save chiplet and corresponding IOs into database</span>
+<span class="sd">    Args:</span>
+<span class="sd">        chiplet: chiplet object from form</span>
+<span class="sd">        io_dict: dictionary of IOs and their attributes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chiplet</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">io_dict</span><span class="p">:</span>
+        <span class="n">io</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">io_dict</span><span class="p">[</span><span class="n">num</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">chiplet</span> <span class="o">=</span> <span class="n">chiplet</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">pname</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;pname&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">pnum</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;pnum&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">sigt</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;sigt&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">io_mech</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;io_mech&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">diameter_mm</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;diameter_mm&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">x_pos_mm</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;x_pos_mm&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">y_pos_mm</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="s2">&quot;y_pos_mm&quot;</span><span class="p">]</span>
+        <span class="n">io</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="save_cfg"><a class="viewcode-back" href="../../modules/views.html#chiplet.views.save_cfg">[docs]</a><span class="k">def</span> <span class="nf">save_cfg</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">cfg_dict</span><span class="p">,</span> <span class="n">configname</span><span class="p">,</span> <span class="n">proto</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save config and corresponding ConfigIOs into database</span>
+<span class="sd">    Args:</span>
+<span class="sd">        cid: chiplet ID</span>
+<span class="sd">        cfg_dict: dictionary of ConfigIOs and their attributes</span>
+<span class="sd">        configname: name of config specified by user in form</span>
+<span class="sd">        proto: protocol of config specified by user in form</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chiplet</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">cid</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">cfgname</span> <span class="o">=</span> <span class="n">configname</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">proto</span> <span class="o">=</span> <span class="n">proto</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">chiplet</span> <span class="o">=</span> <span class="n">chiplet</span>
+    <span class="n">c</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="p">:</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">cfg_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">cfgio</span> <span class="o">=</span> <span class="n">ConfigIO</span><span class="p">()</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">chiplet</span><span class="p">,</span> <span class="n">pnum</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">tpu</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;tpu&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">tpd</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;tpd&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">tps</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;tps&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">sysnn</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;sysnn&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;driver&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">fastnn</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;fastnn&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">fastconn</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;fastconn&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">rdlconn</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;rdlconn&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">ioconn</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;ioconn&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">rpriority</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;rpriority&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">rdl2tile</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;rdl2tile&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">pass_0201</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;pass_0201&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">pass_0402</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;pass_0402&quot;</span><span class="p">]</span>
+        <span class="n">cfgio</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

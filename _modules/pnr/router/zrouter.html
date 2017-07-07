@@ -1,0 +1,418 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.router.zrouter &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+
+  <h1>Source code for pnr.router.zrouter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Router App zRouter Algorithm</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pnr.router.utility.constant</span> <span class="k">import</span> <span class="n">Constant</span><span class="p">,</span> <span class="n">RouterConstant</span>
+<span class="kn">from</span> <span class="nn">pnr.router.utility.exception</span> <span class="k">import</span> <span class="n">RoutingError</span>
+
+
+<div class="viewcode-block" id="ZeusRouter"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter">[docs]</a><span class="k">class</span> <span class="nc">ZeusRouter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assigns gridcode values to ball to tile connections</span>
+<span class="sd">    Routes ball according to FNN definition</span>
+
+<span class="sd">     Attributes:</span>
+<span class="sd">        tilegrid - FAST TileGrid model</span>
+<span class="sd">        fnn_to_bid - Dictionary to map FNN to a list of uBumpIDs</span>
+<span class="sd">        bid_to_ball - Dictionary to map bid to a ball</span>
+<span class="sd">        bid_to_coord - Dictionary to map bid to a list of tile coordinates on tilegrid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tilegrid</span><span class="p">,</span> <span class="n">fnn_to_bid</span><span class="p">,</span> <span class="n">bid_to_ball</span><span class="p">,</span> <span class="n">bid_to_coord</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span> <span class="o">=</span> <span class="n">tilegrid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span> <span class="o">=</span> <span class="n">fnn_to_bid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span> <span class="o">=</span> <span class="n">bid_to_ball</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span> <span class="o">=</span> <span class="n">bid_to_coord</span>
+
+<div class="viewcode-block" id="ZeusRouter.get_assets"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.get_assets">[docs]</a>    <span class="k">def</span> <span class="nf">get_assets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the data structures that has been processed by router</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            TileGrid: tilegrid model</span>
+<span class="sd">            dict: dictionary of fnn to bid_list mappings</span>
+<span class="sd">            dict: dictionary of bid to ball mappings</span>
+<span class="sd">            dict: dictionary of bid to coord_list mappings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_system"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_system">[docs]</a>    <span class="k">def</span> <span class="nf">route_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper method to call all routing methods</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">route_gnd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route_vdd</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route_pup</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route_pdn</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route_bumps</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_gnd"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_gnd">[docs]</a>    <span class="k">def</span> <span class="nf">route_gnd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Connect all tiles connected to balls with FNN:GND to GND</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">bid_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">Constant</span><span class="o">.</span><span class="n">FNN_GND</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bid_list</span><span class="p">:</span>
+            <span class="c1"># Print Bumps connected</span>
+            <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">coord</span><span class="o">.</span><span class="n">row</span><span class="p">][</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">connect_gnd</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_vdd"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_vdd">[docs]</a>    <span class="k">def</span> <span class="nf">route_vdd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Connect all tiles connected to balls with FNN:VDD to VDD</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">bid_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">Constant</span><span class="o">.</span><span class="n">FNN_VDD</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bid_list</span><span class="p">:</span>
+            <span class="c1"># Print Bumps connected</span>
+            <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">coord</span><span class="o">.</span><span class="n">row</span><span class="p">][</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">connect_vdd</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_pup"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_pup">[docs]</a>    <span class="k">def</span> <span class="nf">route_pup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set resistance values for all tiles connected to balls with pull-up values</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">bid</span><span class="p">,</span> <span class="n">ball</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">ball</span><span class="o">.</span><span class="n">tpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_pull_value</span><span class="p">(</span><span class="n">ball</span><span class="o">.</span><span class="n">tpu</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_pdn"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_pdn">[docs]</a>    <span class="k">def</span> <span class="nf">route_pdn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set resistance values for all tiles connected to balls with with pull-down values</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">bid</span><span class="p">,</span> <span class="n">ball</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">ball</span><span class="o">.</span><span class="n">tpd</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_pull_value</span><span class="p">(</span><span class="n">ball</span><span class="o">.</span><span class="n">tpd</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.set_pull_value"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.set_pull_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_pull_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determining logic of resistance level on FAST board</span>
+<span class="sd">        Args:</span>
+<span class="sd">            res (int):</span>
+<span class="sd">            bid (int):</span>
+<span class="sd">            is_pup (bool): whether it&#39;s pull-up or pull-down</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">coord_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">res</span> <span class="o">==</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pull_conn</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_1_4_</span> <span class="o">&lt;</span> <span class="n">res</span> <span class="o">&lt;</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_1__4</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;Unable to set pull values&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pull_conn</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_1_3_</span> <span class="o">&lt;=</span> <span class="n">res</span> <span class="o">&lt;=</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_1__3</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;Unable to set pull values&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pull_conn</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pull_conn</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">res</span> <span class="o">==</span> <span class="n">RouterConstant</span><span class="o">.</span><span class="n">RES_2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pull_conn</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;Resistance Level not supported&quot;</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.pull_conn"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.pull_conn">[docs]</a>    <span class="k">def</span> <span class="nf">pull_conn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coord</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">is_pup</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set pull values accordingly on FAST</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coord (BumpCoord)</span>
+<span class="sd">            code (int)</span>
+<span class="sd">            is_pup (bool): pull-up or pull-down</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">is_pup</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">coord</span><span class="o">.</span><span class="n">row</span><span class="p">][</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">connect_pup</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">coord</span><span class="o">.</span><span class="n">row</span><span class="p">][</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">connect_pdn</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_bumps"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_bumps">[docs]</a>    <span class="k">def</span> <span class="nf">route_bumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper method to make all routing calls</span>
+<span class="sd">        Includes both analog and digital routing (ONLY ANALOG NOW)</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">priority_tuples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_route_priority</span><span class="p">()</span>
+        <span class="c1"># 3 possible methods to call:</span>
+        <span class="c1"># route_analog</span>
+        <span class="c1"># route_digital</span>
+        <span class="c1"># route_i2c</span>
+
+        <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">priority_tuples</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tup</span><span class="p">)):</span>
+                <span class="n">fnn</span> <span class="o">=</span> <span class="n">tup</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="n">bid_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">fnn</span><span class="p">]</span>
+                <span class="c1"># ANALOG ROUTIING</span>
+                <span class="c1"># This will be changed to fnn % 32 / 8 == 0</span>
+                <span class="k">if</span> <span class="n">fnn</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bid_list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> should route to tile only&quot;</span> <span class="o">%</span> <span class="n">fnn</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bid_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> should route to other bumps only&quot;</span> <span class="o">%</span> <span class="n">fnn</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">route_analog</span><span class="p">(</span><span class="n">bid_list</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.get_route_priority"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.get_route_priority">[docs]</a>    <span class="k">def</span> <span class="nf">get_route_priority</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Preprocess: Sort all bumps by priority first before routing</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list: FNN connection sets sorted by priority</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">priority_to_fnn</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">priority_tuples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">bid_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># This will be changed to fnn &amp; 32 == 1</span>
+            <span class="k">if</span> <span class="n">fnn</span> <span class="o">&gt;=</span> <span class="n">Constant</span><span class="o">.</span><span class="n">FNN_FAST_MIN</span><span class="p">:</span>
+                <span class="n">max_priority</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bid_list</span><span class="p">:</span>
+                    <span class="n">ball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">ball</span><span class="o">.</span><span class="n">rprio</span> <span class="o">&gt;</span> <span class="n">max_priority</span><span class="p">:</span>
+                        <span class="n">max_priority</span> <span class="o">=</span> <span class="n">ball</span><span class="o">.</span><span class="n">rprio</span>
+
+                <span class="k">if</span> <span class="n">max_priority</span> <span class="ow">in</span> <span class="n">priority_to_fnn</span><span class="p">:</span>
+                    <span class="n">priority_to_fnn</span><span class="p">[</span><span class="n">max_priority</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fnn</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">priority_to_fnn</span><span class="p">[</span><span class="n">max_priority</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">fnn</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">priority</span><span class="p">,</span> <span class="n">fnn_list</span> <span class="ow">in</span> <span class="n">priority_to_fnn</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">tup</span> <span class="o">=</span> <span class="p">(</span><span class="n">priority</span><span class="p">,)</span>
+            <span class="k">for</span> <span class="n">fnn</span> <span class="ow">in</span> <span class="n">fnn_list</span><span class="p">:</span>
+                <span class="n">tup</span> <span class="o">+=</span> <span class="p">(</span><span class="n">fnn</span><span class="p">,)</span>
+            <span class="n">priority_tuples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+
+        <span class="n">priority_tuples</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">priority_tuples</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.route_analog"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.route_analog">[docs]</a>    <span class="k">def</span> <span class="nf">route_analog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set configuration of tiles that are connected to the ball to route them.</span>
+<span class="sd">        If there are multiple balls, a driver will be chosen (logic TBD)</span>
+<span class="sd">        Choose the first BumpCoord&#39;s col occupy col on tilegrid - col_index</span>
+<span class="sd">        For every BumpCoord, occupy rowbit (associated to col_index),</span>
+<span class="sd">        Then connect row and col</span>
+
+<span class="sd">        Errors:</span>
+<span class="sd">            When there is no more column to occupy</span>
+<span class="sd">            When there is no more rowbit to assign to fnn [Decision TBD]</span>
+<span class="sd">        Args:</span>
+<span class="sd">            bid_list (list): list of bid to be routed (either single or multi)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bid_list</span><span class="p">:</span>
+            <span class="n">select_ball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+            <span class="c1"># Unimplemented</span>
+            <span class="c1"># if select_ball.is_driver:</span>
+            <span class="c1">#    break</span>
+        <span class="n">coord_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">select_ball</span><span class="o">.</span><span class="n">bid</span><span class="p">]</span>
+        <span class="n">coord</span> <span class="o">=</span> <span class="n">coord_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">col_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_avail_col</span><span class="p">(</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;TileGrid has filled all columns available&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">occupy_col</span><span class="p">(</span><span class="n">col_index</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bid_list</span><span class="p">:</span>
+            <span class="n">select_ball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+            <span class="n">coord_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_coord</span><span class="p">[</span><span class="n">bid</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coord_list</span><span class="p">:</span>
+                <span class="n">row_index</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">row</span>
+                <span class="n">bit_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_avail_rowbit</span><span class="p">(</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">bit_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># FIXME: Decision if we should delay routing</span>
+                    <span class="k">raise</span> <span class="n">RoutingError</span><span class="p">(</span><span class="s2">&quot;Failed to connect </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> FNN </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                       <span class="p">(</span><span class="n">select_ball</span><span class="o">.</span><span class="n">mpn</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">pnum</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">fnn</span><span class="p">))</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">occupy_rowbit</span><span class="p">(</span><span class="n">row_index</span><span class="p">,</span> <span class="n">bit_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">select_ball</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span>
+
+                <span class="n">bit_code</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bit_index</span> <span class="o">&gt;=</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">col_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">get_col_value</span><span class="p">()</span>
+                <span class="n">col_code</span> <span class="o">|=</span> <span class="n">bit_code</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">connect_col</span><span class="p">(</span><span class="n">col_code</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">coord</span><span class="o">.</span><span class="n">row</span><span class="p">][</span><span class="n">coord</span><span class="o">.</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">connect_row</span><span class="p">(</span><span class="n">bit_index</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.get_next_avail_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.get_next_avail_col">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_avail_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds the next available column to associate to FNN.</span>
+<span class="sd">        Increments to alternating side to search for a free column</span>
+<span class="sd">        Args:</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: column index that is available, or one that is already associated to fnn.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">get_col_association</span><span class="p">(</span><span class="n">fnn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">index</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">is_filled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">iter_</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">col_index</span> <span class="o">+</span> <span class="n">alternate_increment</span><span class="p">(</span><span class="n">iter_</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">cols</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">index</span>
+
+            <span class="n">iter_</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="ZeusRouter.get_next_avail_rowbit"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.ZeusRouter.get_next_avail_rowbit">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_avail_rowbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds the next available rowbit to associate to FNN</span>
+<span class="sd">        Rowbit to be assigned is determined by col_index</span>
+<span class="sd">            - rowbit = col_index % (.5 available bits) + (.5 available bits)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: the rowbit that is available, or one that is already associated,</span>
+<span class="sd">                or -1 if not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">get_rowbit_association</span><span class="p">(</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">index</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">is_filled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">ind0</span> <span class="o">=</span> <span class="n">col_index</span> <span class="o">%</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span>
+        <span class="n">ind1</span> <span class="o">=</span> <span class="n">col_index</span> <span class="o">%</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span> <span class="o">+</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">ind0</span><span class="p">]</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ind0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ind1</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div></div>
+
+
+<div class="viewcode-block" id="alternate_increment"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.zrouter.alternate_increment">[docs]</a><span class="k">def</span> <span class="nf">alternate_increment</span><span class="p">(</span><span class="n">iter_</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple alternating increment function</span>
+<span class="sd">    Args:</span>
+<span class="sd">        iter_ (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: -ve if iter_ is even, +ve if iter_ is odd</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">iter_</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">iter_</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">iter_</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">2017, software team.
+
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+
+    </div>
+
+
+
+
+  </body>
+</html>

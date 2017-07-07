@@ -1,0 +1,393 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.placer.main &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+
+  <h1>Source code for pnr.placer.main</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">zPlacer takes id of system, gets data from connector, orientate the chiplets</span>
+<span class="sd">on the grid, and returns a dictionary of all balls and coordinates of the tiles</span>
+<span class="sd">they occupy.</span>
+<span class="sd">To Do: adjust for ball diameter</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">product</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">pnr.placer.database</span> <span class="k">import</span> <span class="n">Connector</span>
+
+<div class="viewcode-block" id="zPlacer"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer">[docs]</a><span class="k">class</span> <span class="nc">zPlacer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    zPlacer takes id of system, gets data from connector, orientate the chiplets</span>
+<span class="sd">    on the grid, and returns a dictionary of all balls and coordinates of the tiles</span>
+<span class="sd">    they occupy. Note: adjust for ball diameter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span> <span class="o">=</span> <span class="n">sys_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="zPlacer.place_system"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer.place_system">[docs]</a>    <span class="k">def</span> <span class="nf">place_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create Connector object to get respective data from db,</span>
+<span class="sd">        rotate and shift each chiplet to its center on grid,</span>
+<span class="sd">        generate grid &amp; ubump mapping</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            final_coords: coordinates of all filled ubumps in the system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">db_conn</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="n">sids</span> <span class="o">=</span> <span class="n">db_conn</span><span class="o">.</span><span class="n">get_syscomp_ids</span><span class="p">()</span>
+        <span class="n">cens</span> <span class="o">=</span> <span class="n">db_conn</span><span class="o">.</span><span class="n">get_system_cens</span><span class="p">()</span>
+        <span class="n">rots</span> <span class="o">=</span> <span class="n">db_conn</span><span class="o">.</span><span class="n">get_system_rots</span><span class="p">()</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="n">db_conn</span><span class="o">.</span><span class="n">get_system_dims</span><span class="p">()</span>
+        <span class="n">num_chips</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sids</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">num_chips</span><span class="p">):</span>
+            <span class="n">s_coords</span> <span class="o">=</span> <span class="n">db_conn</span><span class="o">.</span><span class="n">get_coords_df</span><span class="p">(</span><span class="n">sids</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="n">coordlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate_and_shift_center</span><span class="p">(</span><span class="n">s_coords</span><span class="p">,</span> <span class="n">rots</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">cens</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">dims</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coordlist</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">grid_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_grid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">final_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df_to_dict</span><span class="p">(</span><span class="n">grid_coords</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">final_coords</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._rotate_and_shift_center"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._rotate_and_shift_center">[docs]</a>    <span class="k">def</span> <span class="nf">_rotate_and_shift_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_coords</span><span class="p">,</span> <span class="n">rot</span><span class="p">,</span> <span class="n">cen</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pre-process dataframe by splitting into reference details and</span>
+<span class="sd">        xy coordinates, rotate chiplet, snap to grid, and shift chiplet to</span>
+<span class="sd">        its center on the grid.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            s_coords: dataframe with cid, io_ref, ball_dia, cen_x, cen_y columns</span>
+<span class="sd">            rot: rotation integer in multiples of 90, of a chiplet</span>
+<span class="sd">            cen: list containing x and y coordinates of center of a chiplet</span>
+<span class="sd">            dim: list containing length and width of a chiplet</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            coordlist: dataframe of ref details, new center coords and dia</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_coord</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="c1"># split into io ref details &amp; coordinates info</span>
+        <span class="n">ref_details</span> <span class="o">=</span> <span class="n">s_coords</span><span class="p">[</span><span class="n">s_coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">ball_dia</span> <span class="o">=</span> <span class="n">s_coords</span><span class="p">[</span><span class="n">s_coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">c_xy</span> <span class="o">=</span> <span class="n">s_coords</span><span class="p">[</span><span class="n">s_coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">]]</span>
+        <span class="c1"># rotation</span>
+        <span class="n">ang</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">rot</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">[[</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ang</span><span class="p">),</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ang</span><span class="p">)],</span> <span class="p">[</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ang</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ang</span><span class="p">)]]</span>
+        <span class="n">c_xy</span> <span class="o">=</span> <span class="n">c_xy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="c1"># snap to grid</span>
+        <span class="n">difference_to_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snap_to_grid</span><span class="p">(</span><span class="n">c_xy</span><span class="p">)</span>
+        <span class="c1"># shift to center</span>
+        <span class="n">new_coord</span><span class="p">[</span><span class="s2">&quot;cen_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_xy</span><span class="p">[</span><span class="n">c_xy</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">cen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">difference_to_move</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">new_coord</span><span class="p">[</span><span class="s2">&quot;cen_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_xy</span><span class="p">[</span><span class="n">c_xy</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+</span> <span class="n">cen</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">difference_to_move</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">coordlist</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ref_details</span><span class="p">,</span> <span class="n">new_coord</span><span class="p">,</span> <span class="n">ball_dia</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">coordlist</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._snap_to_grid"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._snap_to_grid">[docs]</a>    <span class="k">def</span> <span class="nf">_snap_to_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_xy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Snap to grid means moving the chiplet balls to a position where its</span>
+<span class="sd">        CENTER either lies on the center of a tile, or touches either of the</span>
+<span class="sd">        4 sides of a tile. First ball of a chiplet will be used to snap to grid,</span>
+<span class="sd">        assuming that all the other balls of that chiplet will also land</span>
+<span class="sd">        properly.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            c_xy: dataframe of all ios&#39; x y coordinates of a chiplet</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            difference_to_move: a list of distance that a chiplet&#39;s center has</span>
+<span class="sd">                                to move horizontally, and vertically.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">first_ball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_first_ball</span><span class="p">(</span><span class="n">c_xy</span><span class="p">)</span>
+        <span class="n">snapped_ball_X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_round_coord</span><span class="p">(</span><span class="n">first_ball</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">snapped_ball_Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_round_coord</span><span class="p">(</span><span class="n">first_ball</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">first_ball</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">snapped_ball_X</span><span class="p">,</span> <span class="n">first_ball</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">snapped_ball_Y</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._get_first_ball"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._get_first_ball">[docs]</a>    <span class="k">def</span> <span class="nf">_get_first_ball</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_xy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The first ball is defined to be the top most and left most ball of</span>
+<span class="sd">        a chiplet.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            c_xy: dataframe of all ios&#39; x y coordinates of a chiplet</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            coordlist: list of x,y coordinates of first ball</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">highest_ball</span> <span class="o">=</span> <span class="n">c_xy</span><span class="p">[</span><span class="n">c_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">c_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
+        <span class="n">first_ball</span> <span class="o">=</span> <span class="n">highest_ball</span><span class="p">[</span><span class="n">highest_ball</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">highest_ball</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()]</span>
+        <span class="n">first_ball</span> <span class="o">=</span> <span class="n">first_ball</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">first_ball</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">first_ball</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="c1"># get first ball in leftover list</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._round_coord"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._round_coord">[docs]</a>    <span class="k">def</span> <span class="nf">_round_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coord</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Round a coordinate to the nearest half tile, and returns the newly</span>
+<span class="sd">        snapped coordinate.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coord: a coordinate for rounding (may be negative)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            new_coord: newly snapped coordinate</span>
+<span class="sd">        Example for negative number -92:</span>
+<span class="sd">            -92 % 50 =&gt; -(92 % 50) =&gt; -42 =&gt; -92 - 50-(-42)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">trail_num</span> <span class="o">=</span> <span class="n">coord</span> <span class="o">%</span> <span class="mi">50</span>
+        <span class="k">if</span> <span class="n">trail_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">coord</span>
+        <span class="k">elif</span> <span class="n">trail_num</span> <span class="o">&gt;=</span> <span class="mi">25</span><span class="p">:</span> <span class="c1"># round up</span>
+            <span class="k">return</span> <span class="n">coord</span> <span class="o">+</span> <span class="mi">50</span> <span class="o">-</span> <span class="n">trail_num</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># round down</span>
+            <span class="k">return</span> <span class="n">coord</span> <span class="o">-</span> <span class="n">trail_num</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._generate_grid"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._generate_grid">[docs]</a>    <span class="k">def</span> <span class="nf">_generate_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate grid for returning, and for creating csv files.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe of ref details, new center coords and dia, of</span>
+<span class="sd">                    all chiplets in the system</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            grid_coords: dataframe of coordinates of all filled ubumps</span>
+<span class="sd">                         in the system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#coords.to_csv(&#39;data/test/pre_generate_grid.csv&#39;, index=False)</span>
+        <span class="n">bound_ios</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_upper_lower_bound</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">valid_bound_ios</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_balls_out_of_range</span><span class="p">(</span><span class="n">bound_ios</span><span class="p">)</span>
+        <span class="n">is_gridmap_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_gridmap_csv</span><span class="p">(</span><span class="n">valid_bound_ios</span><span class="p">)</span>
+        <span class="n">grid_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_grid_coords</span><span class="p">(</span><span class="n">valid_bound_ios</span><span class="p">)</span>
+        <span class="c1">#grid_coords.to_csv(&#39;data/test/post_generate_grid.csv&#39;, index=False)</span>
+        <span class="k">return</span> <span class="n">grid_coords</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._generate_upper_lower_bound"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._generate_upper_lower_bound">[docs]</a>    <span class="k">def</span> <span class="nf">_generate_upper_lower_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate upper and lower bounds of each IO in system. As long as an</span>
+<span class="sd">        IO fully or partially covers a tile, a ubump will be assigned to that</span>
+<span class="sd">        IO.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe of ref details, new center coords and dia, of</span>
+<span class="sd">                    all chiplets in the system (cid,io_ref,cen_x,cen_y,ball_dia)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bound_ios: dataframe of (cid,io_ref,X_LB,X_UB,Y_LB,Y_UB)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#coords.to_csv(&quot;data/test/coords_df.csv&quot;, index=False)</span>
+        <span class="n">ball_x_y</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]]</span>
+        <span class="n">ref_details</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">bound_ios</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="c1"># create upper and lower bounds of each IO</span>
+        <span class="n">b_xlb</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.005</span><span class="p">]</span>
+        <span class="n">b_xub</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">]</span>
+        <span class="n">b_ylb</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.005</span><span class="p">]</span>
+        <span class="n">b_yub</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">]</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_LB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball_x_y</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b_xlb</span><span class="p">)</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_UB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball_x_y</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b_xub</span><span class="p">)</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_LB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball_x_y</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b_ylb</span><span class="p">)</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_UB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball_x_y</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">b_yub</span><span class="p">)</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_LB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_LB&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_UB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;X_UB&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_LB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_LB&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_UB&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bound_ios</span><span class="p">[</span><span class="s2">&quot;Y_UB&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span>
+        <span class="c1"># merge both ref and processed bound ios</span>
+        <span class="n">merged_bound_ios</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ref_details</span><span class="p">,</span> <span class="n">bound_ios</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#merged_bound_ios.to_csv(&quot;data/test/bound_ios.csv&quot;, index=False)</span>
+        <span class="k">return</span> <span class="n">merged_bound_ios</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._remove_balls_out_of_range"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._remove_balls_out_of_range">[docs]</a>    <span class="k">def</span> <span class="nf">_remove_balls_out_of_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove balls that are out of range of the grid (0-36,0-56).</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            coords: dataframe of valid X_LB, X_UB, Y_LB, Y_UB &amp; ref details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#coords.to_csv(&#39;data/test/pre_bound_ios_on_right_of_range.csv&#39;, index=False)</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;X_LB&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;X_UB&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;Y_LB&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;Y_UB&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;X_LB&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">36</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;X_UB&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">36</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;Y_LB&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">56</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;Y_UB&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">56</span><span class="p">]</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">#coords.to_csv(&#39;data/test/post_bound_ios_on_right_of_range.csv&#39;, index=False)</span>
+        <span class="k">return</span> <span class="n">coords</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._output_gridmap_csv"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._output_gridmap_csv">[docs]</a>    <span class="k">def</span> <span class="nf">_output_gridmap_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate gridmap csv, and ubumpid mapping csv.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            is_valid: boolean, whether csv generation was successful</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ubump_mapping</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">coords</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">ubump_mapping</span><span class="p">[</span><span class="s1">&#39;ubump&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ubump_mapping</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">ubump_mapping</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;./data/placement_out/ubump_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">GRIDMAP_X</span> <span class="o">=</span> <span class="mi">56</span>
+        <span class="n">GRIDMAP_Y</span> <span class="o">=</span> <span class="mi">36</span>
+        <span class="n">gridmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">GRIDMAP_X</span><span class="p">,</span> <span class="n">GRIDMAP_Y</span><span class="p">))</span>
+        <span class="n">num_balls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ball</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_balls</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">xcoord</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;X_LB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;X_UB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])):</span>
+                <span class="k">for</span> <span class="n">ycoord</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;Y_LB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;Y_UB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">gridmap</span><span class="p">[</span><span class="n">ycoord</span><span class="p">][</span><span class="n">xcoord</span><span class="p">]</span> <span class="o">=</span> <span class="n">ubump_mapping</span><span class="p">[</span><span class="s2">&quot;ubump&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">]</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+        <span class="n">gridmap</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gridmap</span><span class="p">)</span>
+        <span class="c1"># start row and column index from 1</span>
+        <span class="n">gridmap</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">gridmap</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1"># row</span>
+        <span class="n">gridmap</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">gridmap</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># column</span>
+        <span class="c1"># flip grid on x axis for viewing</span>
+        <span class="n">gridmap</span> <span class="o">=</span> <span class="n">gridmap</span><span class="o">.</span><span class="n">iloc</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">gridmap</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;./data/placement_out/placement_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._get_grid_coords"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._get_grid_coords">[docs]</a>    <span class="k">def</span> <span class="nf">_get_grid_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate grid coordinates for returning. Assume that cid and pnum are</span>
+<span class="sd">        strings without spaces.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            final_coords: dataframe of ball index, x and y coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#coords.to_csv(&#39;data/test/pre_get_grid_coords.csv&#39;, index=False)</span>
+        <span class="n">num_balls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">final_coords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ball</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_balls</span><span class="p">):</span>
+            <span class="n">col_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;X_LB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;X_UB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">]))</span>
+            <span class="n">row_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;Y_LB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;Y_UB&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ball_coords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="n">row_range</span><span class="p">,</span> <span class="n">col_range</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+            <span class="n">ball_coords</span><span class="p">[</span><span class="s2">&quot;ball&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;cid&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">coords</span><span class="p">[</span><span class="s2">&quot;io_ref&quot;</span><span class="p">][</span><span class="n">ball</span><span class="p">]</span>
+            <span class="n">ball_coords</span><span class="p">[</span><span class="s2">&quot;ubumpid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ball</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1"># +1 to start from index 1</span>
+            <span class="n">ball_coords</span> <span class="o">=</span> <span class="n">ball_coords</span><span class="p">[[</span><span class="s2">&quot;ball&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;ubumpid&quot;</span><span class="p">]]</span>
+            <span class="n">final_coords</span> <span class="o">=</span> <span class="n">final_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ball_coords</span><span class="p">)</span>
+
+        <span class="n">final_coords</span> <span class="o">=</span> <span class="n">final_coords</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">#final_coords.to_csv(&#39;data/test/post_get_grid_coords.csv&#39;, index=False)</span>
+        <span class="k">return</span> <span class="n">final_coords</span></div>
+
+
+<div class="viewcode-block" id="zPlacer._df_to_dict"><a class="viewcode-back" href="../../../modules/placer.html#pnr.placer.main.zPlacer._df_to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">_df_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert dataframe to dictionary of final coordinates</span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords: dataframe consisting of all coordinates and ball diameter</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            coord_dict: dictionary of each ball&#39;s coordinates</span>
+<span class="sd">            example: {&quot;U2 A1&quot;: [{&quot;cx&quot;: 123, &quot;cy&quot;: 356, &quot;ubump&quot;: 1},</span>
+<span class="sd">                                {&quot;cx&quot;: 124, &quot;cy&quot;: 356, &quot;ubump&quot;: 1}],</span>
+<span class="sd">                      &quot;U2 A2&quot;: [{&quot;cx&quot;: 128, &quot;cy&quot;: 358, &quot;ubump&quot;: 2},...]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coord_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">coords</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">coord_dict</span><span class="p">:</span>
+                <span class="n">coord_dict</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;cx&#39;</span><span class="p">:</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;cy&#39;</span><span class="p">:</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;ubump&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">]})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">coord_dict</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;cx&#39;</span><span class="p">:</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;cy&#39;</span><span class="p">:</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;ubump&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">3</span><span class="p">]}]</span>
+        <span class="k">return</span> <span class="n">coord_dict</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      2017, software team.
+
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+
+    </div>
+
+
+
+
+  </body>
+</html>

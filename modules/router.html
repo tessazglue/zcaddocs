@@ -1,0 +1,1235 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>zRouter &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="zPlacer" href="placer.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="zrouter">
+<h1>zRouter<a class="headerlink" href="#zrouter" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>zRouter<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-pnr.router.zrouter"></span><p>Router App zRouter Algorithm</p>
+<dl class="class">
+<dt id="pnr.router.zrouter.ZeusRouter">
+<em class="property">class </em><code class="descclassname">pnr.router.zrouter.</code><code class="descname">ZeusRouter</code><span class="sig-paren">(</span><em>tilegrid</em>, <em>fnn_to_bid</em>, <em>bid_to_ball</em>, <em>bid_to_coord</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns gridcode values to ball to tile connections
+Routes ball according to FNN definition</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Attributes:</dt>
+<dd>tilegrid - FAST TileGrid model
+fnn_to_bid - Dictionary to map FNN to a list of uBumpIDs
+bid_to_ball - Dictionary to map bid to a ball
+bid_to_coord - Dictionary to map bid to a list of tile coordinates on tilegrid</dd>
+</dl>
+</div></blockquote>
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.get_assets">
+<code class="descname">get_assets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.get_assets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.get_assets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the data structures that has been processed by router
+Args:
+:returns: tilegrid model</p>
+<blockquote>
+<div>dict: dictionary of fnn to bid_list mappings
+dict: dictionary of bid to ball mappings
+dict: dictionary of bid to coord_list mappings</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#pnr.router.assets.TileGrid" title="pnr.router.assets.TileGrid">TileGrid</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.get_next_avail_col">
+<code class="descname">get_next_avail_col</code><span class="sig-paren">(</span><em>col_index</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.get_next_avail_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.get_next_avail_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the next available column to associate to FNN.
+Increments to alternating side to search for a free column
+:param col_index:
+:type col_index: int
+:param fnn:
+:type fnn: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">column index that is available, or one that is already associated to fnn.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.get_next_avail_rowbit">
+<code class="descname">get_next_avail_rowbit</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.get_next_avail_rowbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.get_next_avail_rowbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the next available rowbit to associate to FNN
+Rowbit to be assigned is determined by col_index</p>
+<blockquote>
+<div><ul class="simple">
+<li>rowbit = col_index % (.5 available bits) + (.5 available bits)</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>row_index</strong> (<em>int</em>) – </li>
+<li><strong>col_index</strong> (<em>int</em>) – </li>
+<li><strong>fnn</strong> (<em>int</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>the rowbit that is available, or one that is already associated,</dt>
+<dd><p class="first last">or -1 if not found</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.get_route_priority">
+<code class="descname">get_route_priority</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.get_route_priority"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.get_route_priority" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preprocess: Sort all bumps by priority first before routing
+Args:
+:returns: FNN connection sets sorted by priority
+:rtype: list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.pull_conn">
+<code class="descname">pull_conn</code><span class="sig-paren">(</span><em>coord</em>, <em>code</em>, <em>is_pup</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.pull_conn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.pull_conn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set pull values accordingly on FAST
+:param coord:
+:type coord: BumpCoord
+:param code:
+:type code: int
+:param is_pup: pull-up or pull-down
+:type is_pup: bool</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_analog">
+<code class="descname">route_analog</code><span class="sig-paren">(</span><em>bid_list</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_analog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_analog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set configuration of tiles that are connected to the ball to route them.
+If there are multiple balls, a driver will be chosen (logic TBD)
+Choose the first BumpCoord’s col occupy col on tilegrid - col_index
+For every BumpCoord, occupy rowbit (associated to col_index),
+Then connect row and col</p>
+<dl class="docutils">
+<dt>Errors:</dt>
+<dd>When there is no more column to occupy
+When there is no more rowbit to assign to fnn [Decision TBD]</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bid_list</strong> (<em>list</em>) – list of bid to be routed (either single or multi)</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_bumps">
+<code class="descname">route_bumps</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_bumps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_bumps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method to make all routing calls
+Includes both analog and digital routing (ONLY ANALOG NOW)
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_gnd">
+<code class="descname">route_gnd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_gnd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_gnd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect all tiles connected to balls with FNN:GND to GND
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_pdn">
+<code class="descname">route_pdn</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_pdn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_pdn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set resistance values for all tiles connected to balls with with pull-down values
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_pup">
+<code class="descname">route_pup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_pup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_pup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set resistance values for all tiles connected to balls with pull-up values
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_system">
+<code class="descname">route_system</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method to call all routing methods
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.route_vdd">
+<code class="descname">route_vdd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.route_vdd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.route_vdd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect all tiles connected to balls with FNN:VDD to VDD
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.zrouter.ZeusRouter.set_pull_value">
+<code class="descname">set_pull_value</code><span class="sig-paren">(</span><em>res</em>, <em>bid</em>, <em>is_pup</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#ZeusRouter.set_pull_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.ZeusRouter.set_pull_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determining logic of resistance level on FAST board
+:param res:
+:type res: int
+:param bid:
+:type bid: int
+:param is_pup: whether it’s pull-up or pull-down
+:type is_pup: bool</p>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.zrouter.alternate_increment">
+<code class="descclassname">pnr.router.zrouter.</code><code class="descname">alternate_increment</code><span class="sig-paren">(</span><em>iter_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/zrouter.html#alternate_increment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.zrouter.alternate_increment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple alternating increment function
+:param <a href="#id2"><span class="problematic" id="id3">iter_</span></a>:
+:type <a href="#id4"><span class="problematic" id="id5">iter_</span></a>: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">-ve if <a href="#id6"><span class="problematic" id="id7">iter_</span></a> is even, +ve if <a href="#id8"><span class="problematic" id="id9">iter_</span></a> is odd</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pnr.router.assets">
+<span id="assets"></span><h2>Assets<a class="headerlink" href="#module-pnr.router.assets" title="Permalink to this headline">¶</a></h2>
+<p>Router App Asset Classes</p>
+<dl class="docutils">
+<dt>Classes:</dt>
+<dd><dl class="first docutils">
+<dt>TileGrid - Model of FAST TileGrid</dt>
+<dd><p class="first">Tile
+Row</p>
+<blockquote>
+<div>Rowbit</div></blockquote>
+<p class="last">Col</p>
+</dd>
+</dl>
+<p class="last">Ball - Contains information for each ball on netlist
+BumpCoord - Mapping of ball to coordinates on TileGrid</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="pnr.router.assets.Ball">
+<em class="property">class </em><code class="descclassname">pnr.router.assets.</code><code class="descname">Ball</code><span class="sig-paren">(</span><em>bid</em>, <em>fnn</em>, <em>mpn</em>, <em>pnum</em>, <em>snn</em>, <em>fconn</em>, <em>tpu</em>, <em>tpd</em>, <em>rprio</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#Ball"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.Ball" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of a single ball and its system configuration on the FAST board</p>
+<dl class="attribute">
+<dt>
+<code class="descname">bid - uBumpID</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">fnn - FastNetName</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">mpn - ManufacturerPartName</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">pnum - PartNumber</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">snn - SystemNetName</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">fconn - FASTconnection</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">tpu - Tile Pullup</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">tpd - Tile Pulldown</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">rprio - Priority</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.BumpCoord">
+<em class="property">class </em><code class="descclassname">pnr.router.assets.</code><code class="descname">BumpCoord</code><span class="sig-paren">(</span><em>bid</em>, <em>row</em>, <em>col</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#BumpCoord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.BumpCoord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping between Ball and Tile on the TileGrid</p>
+<dl class="attribute">
+<dt>
+<code class="descname">bid - uBumpID</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">row - row_index on TileGrid</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">col - col_index on TileGrid</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.TileGrid">
+<em class="property">class </em><code class="descclassname">pnr.router.assets.</code><code class="descname">TileGrid</code><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of the whole tilegrid and its individual tile associations</p>
+<dl class="attribute">
+<dt>
+<code class="descname">rows - list[Row()] list of Row objects on the Tile Grid</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">cols - list[Column()] list of Column objects on the Tile Grid</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">tiles - list[list[Tile()]] list of Tile objects on the Tile Grid</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">num_cols_filled - [INT] number of columns used</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">is_filled - [BOOLEAN] if all columns are used</code></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.TileGrid.Column">
+<em class="property">class </em><code class="descname">Column</code><span class="sig-paren">(</span><em>is_occupied=False</em>, <em>fnn=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Column"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of a single column and its ownership</p>
+<dl class="docutils">
+<dt>Attribues:</dt>
+<dd>is_occupied - [BOOLEAN] if column is occupied by a connection
+fnn - [INT] FastNetName using the column connection</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.TileGrid.Row">
+<em class="property">class </em><code class="descname">Row</code><span class="sig-paren">(</span><em>is_filled=False</em>, <em>num_bits_filled=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of a single row and its ownership associations</p>
+<dl class="attribute">
+<dt>
+<code class="descname">bits - list[Bits()] list of RowBit objects</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">is_filled - [BOOLEAN] if all row connections are used</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">num_bits_filled - [INT] number of connections using row</code></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.TileGrid.Row.RowBit">
+<em class="property">class </em><code class="descname">RowBit</code><span class="sig-paren">(</span><em>is_occupied=False</em>, <em>fnn=0</em>, <em>is_connected=False</em>, <em>col_index=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Row.RowBit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Row.RowBit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of a single RowBit and its ownership associations</p>
+<dl class="attribute">
+<dt>
+<code class="descname">is_occupied - [BOOLEAN] if bit is associated</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">fnn - [INT] FastNetName using the bit connection</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">is_connected - [BOOLEAN] if bit is connected</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">col_index - [INT] column index using the rowbit connection</code></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Row.check_bits">
+<code class="descname">check_bits</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Row.check_bits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Row.check_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates is_filled to True if all rowbits are occupied
+Args:
+Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.assets.TileGrid.Tile">
+<em class="property">class </em><code class="descname">Tile</code><span class="sig-paren">(</span><em>is_occupied=False</em>, <em>bid=0</em>, <em>fnn=0</em>, <em>preset='0000000000'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Representation of a single tile and its ownership associations</p>
+<dl class="attribute">
+<dt>
+<code class="descname">is_occupied - [BOOLEAN] if tile is occupied by a bump</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">bid - [INT] uBumpID associated with tile</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">fnn - [INT] FastNetName associated with tile</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">gridcode - [STRING] programming code associated with tile</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_col">
+<code class="descname">connect_col</code><span class="sig-paren">(</span><em>col_code</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s column code
+:param col_code:
+:type col_code: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_gnd">
+<code class="descname">connect_gnd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_gnd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_gnd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s row code to GND code
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_pdn">
+<code class="descname">connect_pdn</code><span class="sig-paren">(</span><em>pdn_code</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_pdn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_pdn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s pull-up code
+:param pdn_code:
+:type pdn_code: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_pup">
+<code class="descname">connect_pup</code><span class="sig-paren">(</span><em>pup_code</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_pup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_pup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s pull-up code
+:param pup_code:
+:type pup_code: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_row">
+<code class="descname">connect_row</code><span class="sig-paren">(</span><em>rowbit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s row code
+:param rowbit:
+:type rowbit: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.connect_vdd">
+<code class="descname">connect_vdd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.connect_vdd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.connect_vdd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s row code to VDD code
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_code">
+<code class="descname">get_code</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s gridcode
+Args:
+:returns: gridcode
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_col_string">
+<code class="descname">get_col_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_col_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_col_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s column code string representation
+Args:
+:returns: column code representation
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_col_value">
+<code class="descname">get_col_value</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_col_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_col_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s column code value
+Args:
+:returns: column code in base 10
+:rtype: int</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_colcode">
+<code class="descname">get_colcode</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_colcode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_colcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s column code
+Args:
+:returns: column code
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_pdn_string">
+<code class="descname">get_pdn_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_pdn_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_pdn_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s pull-down code representation
+Args:
+:returns: pull-down code representation
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_pdncode">
+<code class="descname">get_pdncode</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_pdncode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_pdncode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s pull-down code
+Args:
+:returns: pull-down code
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_pup_string">
+<code class="descname">get_pup_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_pup_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_pup_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s pull-up code representation
+Args:
+:returns: pull-up code representation
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_pupcode">
+<code class="descname">get_pupcode</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_pupcode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_pupcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s pull-up code
+Args:
+:returns: pull-up code
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_row_string">
+<code class="descname">get_row_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_row_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_row_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the tile’s row code string representation
+Args:
+:returns: row code representation
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.get_rowcode">
+<code class="descname">get_rowcode</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.get_rowcode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.get_rowcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s row code
+Args:
+:returns: row code
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.gridcode_to_string">
+<code class="descname">gridcode_to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.gridcode_to_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.gridcode_to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s gridcode representation
+Args:
+:returns: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.is_default">
+<code class="descname">is_default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.is_default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.is_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if tile is set at default “0000000000”
+Args:
+:returns: True if at default. False otherwise.
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.set_code">
+<code class="descname">set_code</code><span class="sig-paren">(</span><em>code</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.set_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.set_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s gridcode
+:param code:
+:type code: str</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.Tile.to_string">
+<code class="descname">to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.Tile.to_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.Tile.to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get tile’s gridcode information and connectivity
+Args:
+:returns: str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.check_col">
+<code class="descname">check_col</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.check_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.check_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates is_filled to True if all columns are occupied
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.get_col_association">
+<code class="descname">get_col_association</code><span class="sig-paren">(</span><em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.get_col_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.get_col_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the col_index associated to the given fnn
+:param fnn:
+:type fnn: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the col_index associated to the fnn. -1 if not found.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.get_rowbit_association">
+<code class="descname">get_rowbit_association</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.get_rowbit_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.get_rowbit_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the rowbit associated to given row_index, col_index and fnn
+:param row_index:
+:type row_index: int
+:param col_index:
+:type col_index: int
+:param fnn:
+:type fnn: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the rowbit associated to fnn. -1 if not found</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.get_tile_gridcode">
+<code class="descname">get_tile_gridcode</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.get_tile_gridcode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.get_tile_gridcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the programmable gridcode set on tile
+:param row_index:
+:type row_index: int
+:param col_index:
+:type col_index: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Binary string interpretation of gridcode.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.get_tile_id">
+<code class="descname">get_tile_id</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.get_tile_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.get_tile_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains the bid associated to tile
+:param row_index:
+:type row_index: int
+:param col_index:
+:type col_index: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bid associated to tile. -1 if no association made.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.grid_to_string">
+<code class="descname">grid_to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.grid_to_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.grid_to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get information about occupied rows and columns
+Args:
+:returns: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.occupy_col">
+<code class="descname">occupy_col</code><span class="sig-paren">(</span><em>col_index</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.occupy_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.occupy_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associates the col_index to given fnn
+:param col_index:
+:type col_index: int
+:param fnn:
+:type fnn: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.occupy_rowbit">
+<code class="descname">occupy_rowbit</code><span class="sig-paren">(</span><em>row_index</em>, <em>row_bit</em>, <em>col_index</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.occupy_rowbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.occupy_rowbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associate the rowbit to given col_index and fnn
+:param row_index:
+:type row_index: int
+:param row_bit:
+:type row_bit: int
+:param col_index:
+:type col_index: int
+:param fnn:
+:type fnn: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.set_tile_gridcode">
+<code class="descname">set_tile_gridcode</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em>, <em>code</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.set_tile_gridcode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.set_tile_gridcode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set tile’s programmable gridcode
+:param row_index:
+:type row_index: int
+:param col_index:
+:type col_index: int
+:param code:
+:type code: str</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.set_tile_id">
+<code class="descname">set_tile_id</code><span class="sig-paren">(</span><em>row_index</em>, <em>col_index</em>, <em>bid</em>, <em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.set_tile_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.set_tile_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associate tile on tilegrid to bid and fnn
+:param row_index:
+:type row_index: int
+:param col_index:
+:type col_index: int
+:param bid:
+:type bid: int
+:param fnn:
+:type fnn: int</p>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.assets.TileGrid.tile_to_string">
+<code class="descname">tile_to_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/assets.html#TileGrid.tile_to_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.assets.TileGrid.tile_to_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get information about non-default tiles
+Args:
+:returns: str</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pnr.router.database">
+<span id="database"></span><h2>Database<a class="headerlink" href="#module-pnr.router.database" title="Permalink to this headline">¶</a></h2>
+<p>Router App Database Manager</p>
+<dl class="class">
+<dt id="pnr.router.database.Parser">
+<em class="property">class </em><code class="descclassname">pnr.router.database.</code><code class="descname">Parser</code><span class="sig-paren">(</span><em>sys_id</em>, <em>tilegrid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves System Information (netlist and placement) from the database and parses it into
+proper data structures for the router program</p>
+<dl class="attribute">
+<dt>
+<code class="descname">tilegrid - FAST TileGrid model</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">fnn_to_bid - Dictionary to map FNN to a list of uBumpIDs</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">bid_to_ball - Dictionary to map bid to a ball</code></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">bid_to_coord - Dictionary to map bid to a list of tile coordinates on tilegrid</code></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.Parser.get_assets">
+<code class="descname">get_assets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser.get_assets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser.get_assets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the data structures to be utilised by router
+Args:
+:returns: tilegrid model</p>
+<blockquote>
+<div>dict: dictionary of fnn to bid_list mappings
+dict: dictionary of bid to ball mappings
+dict: dictionary of bid to coord_list mappings</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#pnr.router.assets.TileGrid" title="pnr.router.assets.TileGrid">TileGrid</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.Parser.get_netlist">
+<code class="descname">get_netlist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser.get_netlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser.get_netlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses netlist retrieved from database to Ball objects, create dictionaries of
+fnn to bid_list mappings
+bid to ball mappings
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.Parser.get_placement">
+<code class="descname">get_placement</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser.get_placement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser.get_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses placement retrieved from database to Coord objects, create dictionaries of
+bid to coord_list mappings
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.Parser.get_system_info">
+<code class="descname">get_system_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser.get_system_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser.get_system_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method to run all data retrieval methods
+Args:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.Parser.test_parser">
+<code class="descname">test_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#Parser.test_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.Parser.test_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test method for Parser to simulate retrieving from database
+Args:
+Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pnr.router.database.VisualLoader">
+<em class="property">class </em><code class="descclassname">pnr.router.database.</code><code class="descname">VisualLoader</code><a class="reference internal" href="../_modules/pnr/router/database.html#VisualLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.VisualLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load routed system back into database
+[WIP]
+TODO: BUILD ME</p>
+<dl class="method">
+<dt id="pnr.router.database.VisualLoader.commit_col">
+<code class="descname">commit_col</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#VisualLoader.commit_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.VisualLoader.commit_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all column associations to database</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.VisualLoader.commit_row">
+<code class="descname">commit_row</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#VisualLoader.commit_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.VisualLoader.commit_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all rowbit associations to database</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.VisualLoader.commit_to_db">
+<code class="descname">commit_to_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#VisualLoader.commit_to_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.VisualLoader.commit_to_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method to call all commit methods</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.database.VisualLoader.commit_ubump">
+<code class="descname">commit_ubump</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/database.html#VisualLoader.commit_ubump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.database.VisualLoader.commit_ubump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all ubump associations to database</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pnr.router.writer">
+<span id="writer"></span><h2>Writer<a class="headerlink" href="#module-pnr.router.writer" title="Permalink to this headline">¶</a></h2>
+<p>Router App Output Files Writer</p>
+<dl class="class">
+<dt id="pnr.router.writer.TilePrinter">
+<em class="property">class </em><code class="descclassname">pnr.router.writer.</code><code class="descname">TilePrinter</code><span class="sig-paren">(</span><em>sys_id</em>, <em>tilegrid</em>, <em>fnn_to_bid</em>, <em>bid_to_ball</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes routed TileGrid information to visualisation and tile programming files</p>
+<p>FAST Visualisation:
+$_row.gph
+$_col.gph
+$_uBump.gph</p>
+<p>FAST Preset Verilog and Data:
+$_presets.vs
+$_presets.dat</p>
+<p>FAST BootCfg Program Prototype:
+$_bootcfg.dat</p>
+<p>FAST Segger:
+$_segger.csv</p>
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.fnn_to_snn">
+<code class="descname">fnn_to_snn</code><span class="sig-paren">(</span><em>fnn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.fnn_to_snn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.fnn_to_snn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the System Name associated to FNN
+:param fnn:
+:type fnn: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">System Net Name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.get_filename">
+<code class="descname">get_filename</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.get_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.get_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formulates absolute file path to output file
+:param fname: name of the file to be written
+:type fname: str</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Absolute file path to file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_output">
+<code class="descname">write_output</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper method to run all writer methods
+Creates directories if they do not exist
+Params:
+Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_bootcfg_dat">
+<code class="descname">write_to_bootcfg_dat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_bootcfg_dat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_bootcfg_dat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes bootcfg data of all non-default tiles into DAT file
+Args:
+:returns: &lt;sys_id&gt;_bootcfg.dat
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_col">
+<code class="descname">write_to_col</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_col"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes all column associations into GPH file
+Args:
+:returns: &lt;sys_id&gt;_col.gph
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_presets_dat">
+<code class="descname">write_to_presets_dat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_presets_dat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_presets_dat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes gridcode of all tiles into DAT file
+Args:
+:returns: &lt;sys_id&gt;_presets.dat
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_presets_vs">
+<code class="descname">write_to_presets_vs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_presets_vs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_presets_vs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes tile information of all non-default tiles into VS file
+Args:
+:returns: &lt;sys_id&gt;_presets.vs
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_row">
+<code class="descname">write_to_row</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes all rowbit associations into GPH file
+Args:
+:returns: &lt;sys_id&gt;_row.gph
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_segger_csv">
+<code class="descname">write_to_segger_csv</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_segger_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_segger_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes segger programming info of all tiles into CSV file
+Args:
+:returns: &lt;sys_id&gt;_segger.csv
+:rtype: file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.router.writer.TilePrinter.write_to_ubump">
+<code class="descname">write_to_ubump</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#TilePrinter.write_to_ubump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.TilePrinter.write_to_ubump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes all uBump associations into GPH file
+Args:
+:returns: &lt;sys_id&gt;_uBump.gph
+:rtype: file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.writer.bootcfg_str_builder">
+<code class="descclassname">pnr.router.writer.</code><code class="descname">bootcfg_str_builder</code><span class="sig-paren">(</span><em>addr</em>, <em>str_</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#bootcfg_str_builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.bootcfg_str_builder" title="Permalink to this definition">¶</a></dt>
+<dd><p>String formatter for bootcfg
+:param addr:
+:type addr: int
+:param <a href="#id10"><span class="problematic" id="id11">str_</span></a>:
+:type <a href="#id12"><span class="problematic" id="id13">str_</span></a>: str</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">One line of instruction in binary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.writer.bootcfg_tile_addr_to_str">
+<code class="descclassname">pnr.router.writer.</code><code class="descname">bootcfg_tile_addr_to_str</code><span class="sig-paren">(</span><em>tile_addr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#bootcfg_tile_addr_to_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.bootcfg_tile_addr_to_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts base 10 addr to binary
+:param tile_addr:
+:type tile_addr: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Address in binary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.writer.bootcfg_write_done">
+<code class="descclassname">pnr.router.writer.</code><code class="descname">bootcfg_write_done</code><span class="sig-paren">(</span><em>addr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#bootcfg_write_done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.bootcfg_write_done" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formulate last instruction frame for bootcfg file
+:param addr:
+:type addr: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Instructions in binary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.writer.bootcfg_write_signature">
+<code class="descclassname">pnr.router.writer.</code><code class="descname">bootcfg_write_signature</code><span class="sig-paren">(</span><em>addr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#bootcfg_write_signature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.bootcfg_write_signature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formulate first instruction frame for bootcfg file
+:param addr:
+:type addr: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Instructions in binary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pnr.router.writer.bootcfg_write_tilepgm">
+<code class="descclassname">pnr.router.writer.</code><code class="descname">bootcfg_write_tilepgm</code><span class="sig-paren">(</span><em>addr</em>, <em>row</em>, <em>col</em>, <em>pdsel</em>, <em>pusel</em>, <em>rsel</em>, <em>csel</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/router/writer.html#bootcfg_write_tilepgm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.router.writer.bootcfg_write_tilepgm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formulate tile instruction frame for bootcfg file
+:param addr:
+:type addr: int
+:param row:
+:type row: int
+:param col:
+:type col: int
+:param pdsel:
+:type pdsel: int
+:param pusel:
+:type pusel: int
+:param rsel:
+:type rsel: int
+:param csel:
+:type csel: int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Instructions in binary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Django Views</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="pnr.html">PnR Algorithms</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="packer.html">zPacker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="placer.html">zPlacer</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">zRouter</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="pnr.html">PnR Algorithms</a><ul>
+      <li>Previous: <a href="placer.html" title="previous chapter">zPlacer</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/router.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

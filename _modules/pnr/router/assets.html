@@ -1,0 +1,657 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.router.assets &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pnr.router.assets</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Router App Asset Classes</span>
+
+<span class="sd">Classes:</span>
+<span class="sd">    TileGrid - Model of FAST TileGrid</span>
+<span class="sd">        Tile</span>
+<span class="sd">        Row</span>
+<span class="sd">            Rowbit</span>
+<span class="sd">        Col</span>
+<span class="sd">    Ball - Contains information for each ball on netlist</span>
+<span class="sd">    BumpCoord - Mapping of ball to coordinates on TileGrid</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pnr.router.utility.constant</span> <span class="k">import</span> <span class="n">Constant</span><span class="p">,</span> <span class="n">TileConstant</span>
+
+
+<div class="viewcode-block" id="TileGrid"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid">[docs]</a><span class="k">class</span> <span class="nc">TileGrid</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Representation of the whole tilegrid and its individual tile associations</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        rows - list[Row()] list of Row objects on the Tile Grid</span>
+<span class="sd">        cols - list[Column()] list of Column objects on the Tile Grid</span>
+<span class="sd">        tiles - list[list[Tile()]] list of Tile objects on the Tile Grid</span>
+<span class="sd">        num_cols_filled - [INT] number of columns used</span>
+<span class="sd">        is_filled - [BOOLEAN] if all columns are used</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Row</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Column</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">Tile</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">)]</span>
+                      <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_cols_filled</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_filled</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="TileGrid.check_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.check_col">[docs]</a>    <span class="k">def</span> <span class="nf">check_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates is_filled to True if all columns are occupied</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_filled</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_cols_filled</span> <span class="o">==</span> <span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.occupy_rowbit"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.occupy_rowbit">[docs]</a>    <span class="k">def</span> <span class="nf">occupy_rowbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">row_bit</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Associate the rowbit to given col_index and fnn</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            row_bit (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">rowbit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">row_bit</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rowbit</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">num_bits_filled</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">check_bits</span><span class="p">()</span>
+
+            <span class="n">rowbit</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">rowbit</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+            <span class="n">rowbit</span><span class="o">.</span><span class="n">is_connected</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">rowbit</span><span class="o">.</span><span class="n">col_index</span> <span class="o">=</span> <span class="n">col_index</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.get_rowbit_association"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.get_rowbit_association">[docs]</a>    <span class="k">def</span> <span class="nf">get_rowbit_association</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains the rowbit associated to given row_index, col_index and fnn</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: the rowbit associated to fnn. -1 if not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ind0</span> <span class="o">=</span> <span class="n">col_index</span> <span class="o">%</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span>
+        <span class="n">ind1</span> <span class="o">=</span> <span class="n">col_index</span> <span class="o">%</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span> <span class="o">+</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_MODULO</span>
+        <span class="n">bit0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">ind0</span><span class="p">]</span>
+        <span class="n">bit1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row_index</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">bit0</span><span class="o">.</span><span class="n">is_occupied</span> <span class="ow">and</span> <span class="n">bit0</span><span class="o">.</span><span class="n">fnn</span> <span class="o">==</span> <span class="n">fnn</span> <span class="ow">and</span> \
+                <span class="n">bit0</span><span class="o">.</span><span class="n">is_connected</span> <span class="ow">and</span> <span class="n">bit0</span><span class="o">.</span><span class="n">col_index</span> <span class="o">==</span> <span class="n">col_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ind0</span>
+        <span class="k">if</span> <span class="n">bit1</span><span class="o">.</span><span class="n">is_occupied</span> <span class="ow">and</span> <span class="n">bit1</span><span class="o">.</span><span class="n">fnn</span> <span class="o">==</span> <span class="n">fnn</span> <span class="ow">and</span> \
+                <span class="n">bit1</span><span class="o">.</span><span class="n">is_connected</span> <span class="ow">and</span> <span class="n">bit1</span><span class="o">.</span><span class="n">col_index</span> <span class="o">==</span> <span class="n">col_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ind1</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+<div class="viewcode-block" id="TileGrid.occupy_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.occupy_col">[docs]</a>    <span class="k">def</span> <span class="nf">occupy_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Associates the col_index to given fnn</span>
+<span class="sd">        Args:</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">[</span><span class="n">col_index</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">col</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_cols_filled</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_col</span><span class="p">()</span>
+
+            <span class="n">col</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">col</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.get_col_association"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.get_col_association">[docs]</a>    <span class="k">def</span> <span class="nf">get_col_association</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains the col_index associated to the given fnn</span>
+<span class="sd">        Args:</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: the col_index associated to the fnn. -1 if not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">is_occupied</span> <span class="ow">and</span> <span class="n">col</span><span class="o">.</span><span class="n">fnn</span> <span class="o">==</span> <span class="n">fnn</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+<div class="viewcode-block" id="TileGrid.set_tile_id"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.set_tile_id">[docs]</a>    <span class="k">def</span> <span class="nf">set_tile_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Associate tile on tilegrid to bid and fnn</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            bid (int)</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span>
+        <span class="n">tile</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">tile</span><span class="o">.</span><span class="n">bid</span> <span class="o">=</span> <span class="n">bid</span>
+        <span class="n">tile</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.get_tile_id"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.get_tile_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_tile_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains the bid associated to tile</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: bid associated to tile. -1 if no association made.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">bid</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+<div class="viewcode-block" id="TileGrid.set_tile_gridcode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.set_tile_gridcode">[docs]</a>    <span class="k">def</span> <span class="nf">set_tile_gridcode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set tile&#39;s programmable gridcode</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">            code (str)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.get_tile_gridcode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.get_tile_gridcode">[docs]</a>    <span class="k">def</span> <span class="nf">get_tile_gridcode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row_index</span><span class="p">,</span> <span class="n">col_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains the programmable gridcode set on tile</span>
+<span class="sd">        Args:</span>
+<span class="sd">            row_index (int)</span>
+<span class="sd">            col_index (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Binary string interpretation of gridcode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row_index</span><span class="p">][</span><span class="n">col_index</span><span class="p">]</span><span class="o">.</span><span class="n">get_code</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TileGrid.grid_to_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.grid_to_string">[docs]</a>    <span class="k">def</span> <span class="nf">grid_to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get information about occupied rows and columns</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Rows---------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_SIZE</span><span class="p">):</span>
+                <span class="n">rowbit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">bit</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">rowbit</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Row:</span><span class="si">%d</span><span class="s2"> Bit:</span><span class="si">%d</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">bit</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">rowbit</span><span class="p">)))</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Columns---------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cols</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Col:</span><span class="si">%d</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">column</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.tile_to_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.tile_to_string">[docs]</a>    <span class="k">def</span> <span class="nf">tile_to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get information about non-default tiles</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Tiles NonZero Presets---------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">is_default</span><span class="p">():</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;R:</span><span class="si">{:&lt;3}</span><span class="s2"> C:</span><span class="si">{:&lt;3}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">to_string</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2">, BID=</span><span class="si">%d</span><span class="s2">, FNN=</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">bid</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">fnn</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="c1">#####################</span>
+    <span class="c1">#   Inner Classes   #</span>
+    <span class="c1">#####################</span>
+<div class="viewcode-block" id="TileGrid.Tile"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile">[docs]</a>    <span class="k">class</span> <span class="nc">Tile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Representation of a single tile and its ownership associations</span>
+
+<span class="sd">        Attributes:</span>
+<span class="sd">            is_occupied - [BOOLEAN] if tile is occupied by a bump</span>
+<span class="sd">            bid - [INT] uBumpID associated with tile</span>
+<span class="sd">            fnn - [INT] FastNetName associated with tile</span>
+<span class="sd">            gridcode - [STRING] programming code associated with tile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_occupied</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bid</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fnn</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="s2">&quot;0000000000&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="n">is_occupied</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bid</span> <span class="o">=</span> <span class="n">bid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span> <span class="o">=</span> <span class="n">preset</span>
+
+        <span class="k">def</span> <span class="nf">__set_gridcode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span>
+                           <span class="n">start</span><span class="o">=</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_START</span><span class="p">,</span>
+                           <span class="n">end</span><span class="o">=</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_END</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span><span class="p">[:</span><span class="n">start</span><span class="p">]</span> <span class="o">+</span> <span class="n">value</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span><span class="p">[</span><span class="n">end</span><span class="p">:]</span>
+            <span class="k">return</span>
+
+        <span class="k">def</span> <span class="nf">__get_gridcode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                           <span class="n">start</span><span class="o">=</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_START</span><span class="p">,</span>
+                           <span class="n">end</span><span class="o">=</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_END</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Gridcode Op</span>
+<div class="viewcode-block" id="TileGrid.Tile.set_code"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.set_code">[docs]</a>        <span class="k">def</span> <span class="nf">set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s gridcode</span>
+<span class="sd">            Args:</span>
+<span class="sd">                code (str)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_code"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_code">[docs]</a>        <span class="k">def</span> <span class="nf">get_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s gridcode</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                 str: gridcode</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_gridcode</span><span class="p">()</span></div>
+
+        <span class="c1"># Col Op</span>
+<div class="viewcode-block" id="TileGrid.Tile.connect_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_col">[docs]</a>        <span class="k">def</span> <span class="nf">connect_col</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_code</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s column code</span>
+<span class="sd">            Args:</span>
+<span class="sd">                col_code (int)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">DEC_TO_BIN2</span><span class="p">[</span><span class="n">col_code</span><span class="p">],</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_COL</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_colcode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_colcode">[docs]</a>        <span class="k">def</span> <span class="nf">get_colcode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s column code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: column code</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_COL</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_col_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_col_string">[docs]</a>        <span class="k">def</span> <span class="nf">get_col_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s column code string representation</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: column code representation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">COLCODE_TO_STRING</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_colcode</span><span class="p">()]</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_col_value"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_col_value">[docs]</a>        <span class="k">def</span> <span class="nf">get_col_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s column code value</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                int: column code in base 10</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">BIN2_TO_DEC</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_colcode</span><span class="p">()]</span></div>
+
+        <span class="c1"># Row Op</span>
+<div class="viewcode-block" id="TileGrid.Tile.connect_row"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_row">[docs]</a>        <span class="k">def</span> <span class="nf">connect_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rowbit</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s row code</span>
+<span class="sd">            Args:</span>
+<span class="sd">                rowbit (int)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">ROWBIT_TO_ROWCODE</span><span class="p">[</span><span class="n">rowbit</span><span class="p">],</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.connect_gnd"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_gnd">[docs]</a>        <span class="k">def</span> <span class="nf">connect_gnd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s row code to GND code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_GND</span><span class="p">,</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.connect_vdd"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_vdd">[docs]</a>        <span class="k">def</span> <span class="nf">connect_vdd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s row code to VDD code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_VDD</span><span class="p">,</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_rowcode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_rowcode">[docs]</a>        <span class="k">def</span> <span class="nf">get_rowcode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s row code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: row code</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_ROW</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_row_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_row_string">[docs]</a>        <span class="k">def</span> <span class="nf">get_row_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get the tile&#39;s row code string representation</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: row code representation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">ROWCODE_TO_STRING</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_rowcode</span><span class="p">()]</span></div>
+
+        <span class="c1"># PUP Op</span>
+<div class="viewcode-block" id="TileGrid.Tile.connect_pup"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_pup">[docs]</a>        <span class="k">def</span> <span class="nf">connect_pup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pup_code</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s pull-up code</span>
+<span class="sd">            Args:</span>
+<span class="sd">                pup_code (int)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">DEC_TO_BIN2</span><span class="p">[</span><span class="n">pup_code</span><span class="p">],</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PDN</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_pupcode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_pupcode">[docs]</a>        <span class="k">def</span> <span class="nf">get_pupcode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s pull-up code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: pull-up code</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PUP</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PDN</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_pup_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_pup_string">[docs]</a>        <span class="k">def</span> <span class="nf">get_pup_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s pull-up code representation</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: pull-up code representation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">PUPCODE_TO_STRING</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pupcode</span><span class="p">()]</span></div>
+
+        <span class="c1"># PDN Op</span>
+<div class="viewcode-block" id="TileGrid.Tile.connect_pdn"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.connect_pdn">[docs]</a>        <span class="k">def</span> <span class="nf">connect_pdn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pdn_code</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Set tile&#39;s pull-up code</span>
+<span class="sd">            Args:</span>
+<span class="sd">                pdn_code (int)</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">DEC_TO_BIN2</span><span class="p">[</span><span class="n">pdn_code</span><span class="p">],</span>
+                                <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PDN</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_END</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_pdncode"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_pdncode">[docs]</a>        <span class="k">def</span> <span class="nf">get_pdncode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s pull-down code</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: pull-down code</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_gridcode</span><span class="p">(</span><span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_PDN</span><span class="p">,</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">GRIDCODE_OFF_END</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.get_pdn_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.get_pdn_string">[docs]</a>        <span class="k">def</span> <span class="nf">get_pdn_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s pull-down code representation</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str: pull-down code representation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="n">TileConstant</span><span class="o">.</span><span class="n">PDNCODE_TO_STRING</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_pdncode</span><span class="p">()]</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.is_default"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.is_default">[docs]</a>        <span class="k">def</span> <span class="nf">is_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Check if tile is set at default &quot;0000000000&quot;</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                bool: True if at default. False otherwise.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="s2">&quot;1&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gridcode</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.to_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.to_string">[docs]</a>        <span class="k">def</span> <span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s gridcode information and connectivity</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="s2">&quot;Col=</span><span class="si">{:&lt;3}</span><span class="s2"> Row=</span><span class="si">{:&lt;10}</span><span class="s2"> Pup=</span><span class="si">{:&lt;3}</span><span class="s2"> Pdn=</span><span class="si">{:&lt;3}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_colcode</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_row_string</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pupcode</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pdncode</span><span class="p">(),</span>
+                <span class="s2">&quot;Connected to ID </span><span class="si">{:&lt;2}</span><span class="s2"> value </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_code</span><span class="p">())</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="k">else</span>
+                <span class="s2">&quot;Not Connected      value </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_code</span><span class="p">()))</span></div>
+
+<div class="viewcode-block" id="TileGrid.Tile.gridcode_to_string"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Tile.gridcode_to_string">[docs]</a>        <span class="k">def</span> <span class="nf">gridcode_to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Get tile&#39;s gridcode representation</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                str</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="s2">&quot;Col=</span><span class="si">{}</span><span class="s2"> Row=</span><span class="si">{}</span><span class="s2"> Pup=</span><span class="si">{}</span><span class="s2"> Pdn=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_col_string</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_row_string</span><span class="p">(),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_pup_string</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_pdn_string</span><span class="p">())</span></div></div>
+
+
+<div class="viewcode-block" id="TileGrid.Column"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Column">[docs]</a>    <span class="k">class</span> <span class="nc">Column</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Representation of a single column and its ownership</span>
+
+<span class="sd">        Attribues:</span>
+<span class="sd">            is_occupied - [BOOLEAN] if column is occupied by a connection</span>
+<span class="sd">            fnn - [INT] FastNetName using the column connection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_occupied</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fnn</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="n">is_occupied</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+
+        <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Occupied by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span>
+                               <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="k">else</span>
+                               <span class="s2">&quot;Not Connected&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TileGrid.Row"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Row">[docs]</a>    <span class="k">class</span> <span class="nc">Row</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Representation of a single row and its ownership associations</span>
+
+<span class="sd">        Attributes:</span>
+<span class="sd">            bits - list[Bits()] list of RowBit objects</span>
+<span class="sd">            is_filled - [BOOLEAN] if all row connections are used</span>
+<span class="sd">            num_bits_filled - [INT] number of connections using row</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_filled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">num_bits_filled</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">RowBit</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_SIZE</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_filled</span> <span class="o">=</span> <span class="n">is_filled</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_bits_filled</span> <span class="o">=</span> <span class="n">num_bits_filled</span>
+
+<div class="viewcode-block" id="TileGrid.Row.check_bits"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Row.check_bits">[docs]</a>        <span class="k">def</span> <span class="nf">check_bits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Updates is_filled to True if all rowbits are occupied</span>
+<span class="sd">            Args:</span>
+<span class="sd">            Returns:</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_filled</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_bits_filled</span> <span class="o">==</span> <span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_SIZE</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TileGrid.Row.RowBit"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.TileGrid.Row.RowBit">[docs]</a>        <span class="k">class</span> <span class="nc">RowBit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Representation of a single RowBit and its ownership associations</span>
+
+<span class="sd">            Attributes:</span>
+<span class="sd">                is_occupied - [BOOLEAN] if bit is associated</span>
+<span class="sd">                fnn - [INT] FastNetName using the bit connection</span>
+<span class="sd">                is_connected - [BOOLEAN] if bit is connected</span>
+<span class="sd">                col_index - [INT] column index using the rowbit connection</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+            <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_occupied</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fnn</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">is_connected</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">col_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="o">=</span> <span class="n">is_occupied</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">is_connected</span> <span class="o">=</span> <span class="n">is_connected</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">col_index</span> <span class="o">=</span> <span class="n">col_index</span>
+
+            <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{occupy}</span><span class="s2"> </span><span class="si">{connect}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">occupy</span><span class="o">=</span><span class="s2">&quot;Occupied by </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">fnn</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_occupied</span> <span class="k">else</span> <span class="s2">&quot;Not Occupied&quot;</span><span class="p">,</span>
+                    <span class="n">connect</span><span class="o">=</span><span class="s2">&quot;and Connected to col </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">col_index</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_connected</span> <span class="k">else</span> <span class="s2">&quot;and Not Connected to Col&quot;</span><span class="p">)</span></div></div></div>
+
+
+<div class="viewcode-block" id="Ball"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.Ball">[docs]</a><span class="k">class</span> <span class="nc">Ball</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Representation of a single ball and its system configuration on the FAST board</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        bid - uBumpID</span>
+<span class="sd">        fnn - FastNetName</span>
+<span class="sd">        mpn - ManufacturerPartName</span>
+<span class="sd">        pnum - PartNumber</span>
+<span class="sd">        snn - SystemNetName</span>
+<span class="sd">        fconn - FASTconnection</span>
+<span class="sd">        tpu - Tile Pullup</span>
+<span class="sd">        tpd - Tile Pulldown</span>
+<span class="sd">        rprio - Priority</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">mpn</span><span class="p">,</span> <span class="n">pnum</span><span class="p">,</span> <span class="n">snn</span><span class="p">,</span> <span class="n">fconn</span><span class="p">,</span> <span class="n">tpu</span><span class="p">,</span> <span class="n">tpd</span><span class="p">,</span> <span class="n">rprio</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid</span> <span class="o">=</span> <span class="n">bid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fnn</span> <span class="o">=</span> <span class="n">fnn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpn</span> <span class="o">=</span> <span class="n">mpn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pnum</span> <span class="o">=</span> <span class="n">pnum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snn</span> <span class="o">=</span> <span class="n">snn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fconn</span> <span class="o">=</span> <span class="n">fconn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tpu</span> <span class="o">=</span> <span class="n">tpu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tpd</span> <span class="o">=</span> <span class="n">tpd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rprio</span> <span class="o">=</span> <span class="n">rprio</span></div>
+
+
+<div class="viewcode-block" id="BumpCoord"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.assets.BumpCoord">[docs]</a><span class="k">class</span> <span class="nc">BumpCoord</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mapping between Ball and Tile on the TileGrid</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        bid - uBumpID</span>
+<span class="sd">        row - row_index on TileGrid</span>
+<span class="sd">        col - col_index on TileGrid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bid</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid</span> <span class="o">=</span> <span class="n">bid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row</span> <span class="o">=</span> <span class="n">row</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">col</span> <span class="o">=</span> <span class="n">col</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

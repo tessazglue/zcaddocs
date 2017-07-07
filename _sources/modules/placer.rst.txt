@@ -1,0 +1,18 @@
+zPlacer
+*********
+
+=========
+Main
+=========
+
+.. automodule:: pnr.placer.main
+    :members:
+    :private-members:
+
+=========
+Database
+=========
+
+.. automodule:: pnr.placer.database
+    :members:
+    :private-members:

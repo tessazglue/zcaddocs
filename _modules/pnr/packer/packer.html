@@ -1,0 +1,128 @@
+
+  <body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+
+  <h1>Source code for pnr.packer.packer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Rectangle Packer packs the chiplets into a pre-defined space of</span>
+<span class="sd">3600 x 5600 by sorting chiplets and placing the largest chiplet</span>
+<span class="sd">first, and splitting the spaces to place the next largest chiplet and so on.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="rect_packer"><a class="viewcode-back" href="../../../modules/packer.html#pnr.packer.packer.rect_packer">[docs]</a><span class="k">def</span> <span class="nf">rect_packer</span><span class="p">(</span><span class="n">chip_set</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Rectangle Packer</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a list of chiplet objects</span>
+<span class="sd">    Return:</span>
+<span class="sd">        dictionary of chiplets with coordinates and rotation</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;chip&#39;: &lt;chip object&gt;,</span>
+<span class="sd">            &#39;cen_x&#39;: &lt;x coordinate of center of chiplet&gt;,</span>
+<span class="sd">            &#39;cen_y&#39;: &lt;y coordinate of center of chiplet&gt;,</span>
+<span class="sd">            &#39;rot&#39;: &lt;rotation of chiplet&gt;</span>
+<span class="sd">        }</span>
+<span class="sd">    Exception:</span>
+<span class="sd">        [WIP: need to include a way to update checker]</span>
+
+<span class="sd">    Spaces are in the tuple format:</span>
+<span class="sd">    (top-left x-coord, top-left y-coord, bottom-right x-coord, bottom-right y-coord)</span>
+
+<span class="sd">    TODO:</span>
+<span class="sd">        - include margin of systems</span>
+<span class="sd">        - allow for keystone chips to be fixed first</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T_X</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">T_Y</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">B_X</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">B_Y</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">MARGIN_SCALE</span> <span class="o">=</span> <span class="mi">10</span>
+
+    <span class="n">packing</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">spaces</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3600</span><span class="p">,</span> <span class="mi">5600</span><span class="p">)]</span>
+
+    <span class="n">sorted_chips</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">chip_set</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">chip</span><span class="p">:</span> <span class="o">-</span> <span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span> <span class="o">*</span> <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">sorted_chips</span><span class="p">:</span>
+        <span class="n">chip_place</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span> <span class="o">+=</span> <span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">margin</span> <span class="o">*</span> <span class="n">MARGIN_SCALE</span><span class="p">)</span>
+        <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span> <span class="o">+=</span> <span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">margin</span> <span class="o">*</span> <span class="n">MARGIN_SCALE</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">spaces</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span> <span class="o">&lt;=</span> <span class="n">spaces</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">B_X</span><span class="p">]</span> <span class="o">-</span> <span class="n">spaces</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">T_X</span><span class="p">])</span> <span class="ow">and</span>
+                    <span class="p">(</span><span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span> <span class="o">&lt;=</span> <span class="n">spaces</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">B_Y</span><span class="p">]</span> <span class="o">-</span> <span class="n">spaces</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">T_Y</span><span class="p">])):</span>
+                <span class="n">orig</span> <span class="o">=</span> <span class="n">spaces</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;chip&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span>
+                <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;cen_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">orig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;cen_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">orig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;rot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">spaces</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">orig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">chip</span><span class="o">.</span><span class="n">x_dim</span><span class="p">,</span> <span class="n">orig</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">orig</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">orig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span><span class="p">))</span>
+                <span class="n">spaces</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">orig</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">orig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">chip</span><span class="o">.</span><span class="n">y_dim</span><span class="p">,</span> <span class="n">orig</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">orig</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+                <span class="k">break</span>
+
+        <span class="c1"># if chiplet is unable to fit into available space squares, default to (0,0)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chip_place</span><span class="p">:</span>
+            <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;chip&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chip</span>
+            <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;cen_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;cen_y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">chip_place</span><span class="p">[</span><span class="s2">&quot;rot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">packing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chip_place</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">packing</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">2017, software team.
+
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+
+    </div>
+
+  </body>

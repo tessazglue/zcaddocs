@@ -1,0 +1,257 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.router.utility.constant &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pnr.router.utility.constant</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Router App Constant Classes</span>
+<span class="sd">    - Holds constant values for all Router modules</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
+
+
+<div class="viewcode-block" id="Constant"><a class="viewcode-back" href="../../../../modules/router.html#pnr.router.utility.constant.Constant">[docs]</a><span class="k">class</span> <span class="nc">Constant</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Global Constants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">COL_SIZE</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">ROW_SIZE</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">ROWBIT_SIZE</span> <span class="o">=</span> <span class="mi">12</span>
+
+    <span class="n">GRID_SIZE</span> <span class="o">=</span> <span class="n">COL_SIZE</span> <span class="o">*</span> <span class="n">ROW_SIZE</span>
+    <span class="n">ROWBIT_MODULO</span> <span class="o">=</span> <span class="n">ROWBIT_SIZE</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="n">FNN_GND</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FNN_VDD</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">FNN_FAST_MIN</span> <span class="o">=</span> <span class="mi">10000</span></div>
+
+
+<div class="viewcode-block" id="TileConstant"><a class="viewcode-back" href="../../../../modules/router.html#pnr.router.utility.constant.TileConstant">[docs]</a><span class="k">class</span> <span class="nc">TileConstant</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TileGrid Constants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">GRIDCODE_OFF_START</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">GRIDCODE_OFF_END</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">GRIDCODE_OFF_COL</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">GRIDCODE_OFF_ROW</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">GRIDCODE_OFF_PUP</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">GRIDCODE_OFF_PDN</span> <span class="o">=</span> <span class="mi">8</span>
+
+    <span class="n">GRIDCODE_GND</span> <span class="o">=</span> <span class="s2">&quot;1110&quot;</span>
+    <span class="n">GRIDCODE_VDD</span> <span class="o">=</span> <span class="s2">&quot;1111&quot;</span>
+
+    <span class="n">DEC_TO_BIN2</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;00&quot;</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;01&quot;</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;11&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">DEC_TO_BIN4</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;0000&quot;</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;0001&quot;</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;0010&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;0011&quot;</span><span class="p">,</span>
+        <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;0100&quot;</span><span class="p">,</span>
+        <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;0101&quot;</span><span class="p">,</span>
+        <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;0110&quot;</span><span class="p">,</span>
+        <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;0111&quot;</span><span class="p">,</span>
+        <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;1000&quot;</span><span class="p">,</span>
+        <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;1001&quot;</span><span class="p">,</span>
+        <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;1010&quot;</span><span class="p">,</span>
+        <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;1011&quot;</span><span class="p">,</span>
+        <span class="mi">12</span><span class="p">:</span> <span class="s2">&quot;1100&quot;</span><span class="p">,</span>
+        <span class="mi">13</span><span class="p">:</span> <span class="s2">&quot;1101&quot;</span><span class="p">,</span>
+        <span class="mi">14</span><span class="p">:</span> <span class="s2">&quot;1110&quot;</span><span class="p">,</span>
+        <span class="mi">15</span><span class="p">:</span> <span class="s2">&quot;1111&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">BIN2_TO_DEC</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;00&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">ROWBIT_TO_ROWCODE</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;0001&quot;</span><span class="p">,</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;0010&quot;</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;0011&quot;</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;0100&quot;</span><span class="p">,</span>
+        <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;0101&quot;</span><span class="p">,</span>
+        <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;0110&quot;</span><span class="p">,</span>
+        <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;0111&quot;</span><span class="p">,</span>
+        <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;1000&quot;</span><span class="p">,</span>
+        <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;1001&quot;</span><span class="p">,</span>
+        <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;1010&quot;</span><span class="p">,</span>
+        <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;1011&quot;</span><span class="p">,</span>
+        <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;1100&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">COLCODE_TO_STRING</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;00&quot;</span><span class="p">:</span> <span class="s2">&quot;UNCONN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="s2">&quot;COL_01&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="s2">&quot;COL_10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;COL_11&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">ROWCODE_TO_STRING</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;0000&quot;</span><span class="p">:</span> <span class="s2">&quot;UNCONN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0001&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0010&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0011&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0100&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0101&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_4&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0110&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_5&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0111&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_6&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1000&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_7&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1001&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_8&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1010&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1011&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1100&quot;</span><span class="p">:</span> <span class="s2">&quot;ROWBIT_11&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1101&quot;</span><span class="p">:</span> <span class="s2">&quot;RESERVED&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1110&quot;</span><span class="p">:</span> <span class="s2">&quot;VSS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1111&quot;</span><span class="p">:</span> <span class="s2">&quot;VDDIO&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">PUPCODE_TO_STRING</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;00&quot;</span><span class="p">:</span> <span class="s2">&quot;UNCONN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="s2">&quot;PUR0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="s2">&quot;PUR1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;PUR2&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">PDNCODE_TO_STRING</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;00&quot;</span><span class="p">:</span> <span class="s2">&quot;UNCONN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="s2">&quot;PDR0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="s2">&quot;PDR1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="s2">&quot;PDR2&quot;</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="RouterConstant"><a class="viewcode-back" href="../../../../modules/router.html#pnr.router.utility.constant.RouterConstant">[docs]</a><span class="k">class</span> <span class="nc">RouterConstant</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    zRouter Constants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RES_0</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">RES_1_3_</span> <span class="o">=</span> <span class="mi">3000</span>
+    <span class="n">RES_1__3</span> <span class="o">=</span> <span class="mi">3500</span>
+    <span class="n">RES_1_4_</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">RES_1__4</span> <span class="o">=</span> <span class="mi">3000</span>
+    <span class="n">RES_1</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">RES_2</span> <span class="o">=</span> <span class="mi">50000</span></div>
+
+
+<div class="viewcode-block" id="WriterConstant"><a class="viewcode-back" href="../../../../modules/router.html#pnr.router.utility.constant.WriterConstant">[docs]</a><span class="k">class</span> <span class="nc">WriterConstant</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Writer Constants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">FNN_GND</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FNN_VDD</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="n">CODE_BOOT_TILEPGM</span> <span class="o">=</span> <span class="s2">&quot;00000001&quot;</span>
+    <span class="n">CODE_BOOT_DONE</span> <span class="o">=</span> <span class="s2">&quot;00001000&quot;</span>
+    <span class="n">CODE_ONES_BYTE</span> <span class="o">=</span> <span class="s2">&quot;11111111&quot;</span>
+    <span class="n">CODE_ZERO_BYTE</span> <span class="o">=</span> <span class="s2">&quot;00000000&quot;</span>
+
+    <span class="n">PATH</span> <span class="o">=</span> <span class="s2">&quot;data/router_p/&quot;</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

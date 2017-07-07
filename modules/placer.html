@@ -1,0 +1,375 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>zPlacer &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="zRouter" href="router.html" />
+    <link rel="prev" title="zPacker" href="packer.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="zplacer">
+<h1>zPlacer<a class="headerlink" href="#zplacer" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pnr.placer.main">
+<span id="main"></span><h2>Main<a class="headerlink" href="#module-pnr.placer.main" title="Permalink to this headline">¶</a></h2>
+<p>zPlacer takes id of system, gets data from connector, orientate the chiplets
+on the grid, and returns a dictionary of all balls and coordinates of the tiles
+they occupy.
+To Do: adjust for ball diameter</p>
+<dl class="class">
+<dt id="pnr.placer.main.zPlacer">
+<em class="property">class </em><code class="descclassname">pnr.placer.main.</code><code class="descname">zPlacer</code><span class="sig-paren">(</span><em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer" title="Permalink to this definition">¶</a></dt>
+<dd><p>zPlacer takes id of system, gets data from connector, orientate the chiplets
+on the grid, and returns a dictionary of all balls and coordinates of the tiles
+they occupy. Note: adjust for ball diameter</p>
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._df_to_dict">
+<code class="descname">_df_to_dict</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._df_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._df_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert dataframe to dictionary of final coordinates
+:param coords: dataframe consisting of all coordinates and ball diameter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary of each ball’s coordinates
+example: {“U2 A1”: [{“cx”: 123, “cy”: 356, “ubump”: 1},<blockquote>
+<div><blockquote>
+<div>{“cx”: 124, “cy”: 356, “ubump”: 1}],</div></blockquote>
+<p>”U2 A2”: [{“cx”: 128, “cy”: 358, “ubump”: 2},…]}</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">coord_dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._generate_grid">
+<code class="descname">_generate_grid</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._generate_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._generate_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate grid for returning, and for creating csv files.
+:param coords: dataframe of ref details, new center coords and dia, of</p>
+<blockquote>
+<div>all chiplets in the system</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>dataframe of coordinates of all filled ubumps</dt>
+<dd>in the system</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">grid_coords</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._generate_upper_lower_bound">
+<code class="descname">_generate_upper_lower_bound</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._generate_upper_lower_bound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._generate_upper_lower_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate upper and lower bounds of each IO in system. As long as an
+IO fully or partially covers a tile, a ubump will be assigned to that
+IO.
+:param coords: dataframe of ref details, new center coords and dia, of</p>
+<blockquote>
+<div>all chiplets in the system (cid,io_ref,cen_x,cen_y,ball_dia)</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataframe of (cid,io_ref,X_LB,X_UB,Y_LB,Y_UB)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bound_ios</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._get_first_ball">
+<code class="descname">_get_first_ball</code><span class="sig-paren">(</span><em>c_xy</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._get_first_ball"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._get_first_ball" title="Permalink to this definition">¶</a></dt>
+<dd><p>The first ball is defined to be the top most and left most ball of
+a chiplet.
+:param c_xy: dataframe of all ios’ x y coordinates of a chiplet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of x,y coordinates of first ball</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">coordlist</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._get_grid_coords">
+<code class="descname">_get_grid_coords</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._get_grid_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._get_grid_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate grid coordinates for returning. Assume that cid and pnum are
+strings without spaces.
+:param coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataframe of ball index, x and y coordinates</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">final_coords</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._output_gridmap_csv">
+<code class="descname">_output_gridmap_csv</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._output_gridmap_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._output_gridmap_csv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate gridmap csv, and ubumpid mapping csv.
+:param coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">boolean, whether csv generation was successful</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">is_valid</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._remove_balls_out_of_range">
+<code class="descname">_remove_balls_out_of_range</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._remove_balls_out_of_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._remove_balls_out_of_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove balls that are out of range of the grid (0-36,0-56).
+:param coords: dataframe of X_LB, X_UB, Y_LB, Y_UB &amp; ref details</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataframe of valid X_LB, X_UB, Y_LB, Y_UB &amp; ref details</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">coords</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._rotate_and_shift_center">
+<code class="descname">_rotate_and_shift_center</code><span class="sig-paren">(</span><em>s_coords</em>, <em>rot</em>, <em>cen</em>, <em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._rotate_and_shift_center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._rotate_and_shift_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pre-process dataframe by splitting into reference details and
+xy coordinates, rotate chiplet, snap to grid, and shift chiplet to
+its center on the grid.
+:param s_coords: dataframe with cid, io_ref, ball_dia, cen_x, cen_y columns
+:param rot: rotation integer in multiples of 90, of a chiplet
+:param cen: list containing x and y coordinates of center of a chiplet
+:param dim: list containing length and width of a chiplet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataframe of ref details, new center coords and dia</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">coordlist</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._round_coord">
+<code class="descname">_round_coord</code><span class="sig-paren">(</span><em>coord</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._round_coord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._round_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Round a coordinate to the nearest half tile, and returns the newly
+snapped coordinate.
+:param coord: a coordinate for rounding (may be negative)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">newly snapped coordinate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">new_coord</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Example for negative number -92:</dt>
+<dd>-92 % 50 =&gt; -(92 % 50) =&gt; -42 =&gt; -92 - 50-(-42)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer._snap_to_grid">
+<code class="descname">_snap_to_grid</code><span class="sig-paren">(</span><em>c_xy</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer._snap_to_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer._snap_to_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Snap to grid means moving the chiplet balls to a position where its
+CENTER either lies on the center of a tile, or touches either of the
+4 sides of a tile. First ball of a chiplet will be used to snap to grid,
+assuming that all the other balls of that chiplet will also land
+properly.
+:param c_xy: dataframe of all ios’ x y coordinates of a chiplet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a list of distance that a chiplet’s center has</dt>
+<dd>to move horizontally, and vertically.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">difference_to_move</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pnr.placer.main.zPlacer.place_system">
+<code class="descname">place_system</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/main.html#zPlacer.place_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.main.zPlacer.place_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Connector object to get respective data from db,
+rotate and shift each chiplet to its center on grid,
+generate grid &amp; ubump mapping
+:returns: coordinates of all filled ubumps in the system
+:rtype: final_coords</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pnr.placer.database">
+<span id="database"></span><h2>Database<a class="headerlink" href="#module-pnr.placer.database" title="Permalink to this headline">¶</a></h2>
+<p>Placer Database Connector</p>
+<dl class="class">
+<dt id="pnr.placer.database.Connector">
+<em class="property">class </em><code class="descclassname">pnr.placer.database.</code><code class="descname">Connector</code><span class="sig-paren">(</span><em>sys_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/database.html#Connector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.database.Connector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connector class handles all the database connections through
+Django’s ORM, to provide data required for zPlacer.</p>
+<dl class="method">
+<dt id="pnr.placer.database.Connector.get_coords_df">
+<code class="descname">get_coords_df</code><span class="sig-paren">(</span><em>syscomp_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pnr/placer/database.html#Connector.get_coords_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pnr.placer.database.Connector.get_coords_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data from ios &amp; create dataframe consisting of
+cid, io_ref, ball_dia, cen_x, cen_y columns.
+:param syscomp_id: id of SysComponent object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dataframe with cid, io_ref, ball_dia, cen_x, cen_y columns</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">coords</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="views.html">Django Views</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="pnr.html">PnR Algorithms</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="packer.html">zPacker</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">zPlacer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="router.html">zRouter</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="pnr.html">PnR Algorithms</a><ul>
+      <li>Previous: <a href="packer.html" title="previous chapter">zPacker</a></li>
+      <li>Next: <a href="router.html" title="next chapter">zRouter</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/placer.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

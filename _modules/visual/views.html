@@ -1,0 +1,217 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>visual.views &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for visual.views</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Views of system module - controls all pages within visual tab</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="k">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render</span><span class="p">,</span> <span class="n">get_list_or_404</span><span class="p">,</span> <span class="n">redirect</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="k">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">chiplet.models</span> <span class="k">import</span> <span class="n">Chiplet</span><span class="p">,</span> <span class="n">IO</span><span class="p">,</span> <span class="n">Config</span><span class="p">,</span> <span class="n">ConfigIO</span>
+<span class="kn">from</span> <span class="nn">system.models</span> <span class="k">import</span> <span class="n">Sys</span><span class="p">,</span> <span class="n">SysComponent</span><span class="p">,</span> <span class="n">SysNetlist</span>
+<span class="kn">from</span> <span class="nn">visual.models</span> <span class="k">import</span> <span class="n">Row</span><span class="p">,</span> <span class="n">Col</span><span class="p">,</span> <span class="n">Tile</span><span class="p">,</span> <span class="n">Placement</span>
+
+
+<div class="viewcode-block" id="show_system_visual"><a class="viewcode-back" href="../../modules/views.html#visual.views.show_system_visual">[docs]</a><span class="k">def</span> <span class="nf">show_system_visual</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows the system visualization.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Sys</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">syscomp</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">SysComponent</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+    <span class="n">vtile</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">Tile</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+    <span class="n">vrow</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">Row</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+    <span class="n">vcol</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">Col</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;visual/cfgDetails.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;syscomp&#39;</span><span class="p">:</span> <span class="n">syscomp</span><span class="p">,</span>
+        <span class="s1">&#39;vtile&#39;</span><span class="p">:</span> <span class="n">vtile</span><span class="p">,</span>
+        <span class="s1">&#39;vrow&#39;</span><span class="p">:</span> <span class="n">vrow</span><span class="p">,</span>
+        <span class="s1">&#39;vcol&#39;</span><span class="p">:</span> <span class="n">vcol</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="show_system_netlist"><a class="viewcode-back" href="../../modules/views.html#visual.views.show_system_netlist">[docs]</a><span class="k">def</span> <span class="nf">show_system_netlist</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows the netlist of the system.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Sys</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">())</span>
+    <span class="n">netlist</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_sysnetlist</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;visual/viewNetlist.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;netlist&#39;</span><span class="p">:</span> <span class="n">netlist</span><span class="p">,</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="all_systems_ran"><a class="viewcode-back" href="../../modules/views.html#visual.views.all_systems_ran">[docs]</a><span class="k">def</span> <span class="nf">all_systems_ran</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of all systems in the database that are running in progress</span>
+<span class="sd">    or already run.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">systems_ran</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">ran</span><span class="p">())</span>
+    <span class="n">systems_in_progress</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">in_progress</span><span class="p">())</span>
+    <span class="n">systems</span> <span class="o">=</span> <span class="n">systems_ran</span> <span class="o">+</span> <span class="n">systems_in_progress</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">systems</span><span class="p">:</span>
+        <span class="n">s_obj</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">s_obj</span><span class="p">[</span><span class="s2">&quot;sys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="n">s_obj</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SysComponent</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">sys</span><span class="o">=</span><span class="n">s</span><span class="p">))</span>
+        <span class="n">sys_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s_obj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;visual/cfgList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sysList&#39;</span><span class="p">:</span> <span class="n">sys_list</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="download_zip"><a class="viewcode-back" href="../../modules/views.html#visual.views.download_zip">[docs]</a><span class="k">def</span> <span class="nf">download_zip</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Zips the sys_id folder from router_out, and allows user to download it.</span>
+<span class="sd">    Removes the temp zip file.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys_name</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span><span class="o">.</span><span class="n">sys_name</span>
+    <span class="n">dir_name</span> <span class="o">=</span> <span class="s2">&quot;data/router_p/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">zip_name</span> <span class="o">=</span> <span class="s2">&quot;data/tmp/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">make_archive</span><span class="p">(</span><span class="n">zip_name</span><span class="p">,</span> <span class="s1">&#39;zip&#39;</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+    <span class="n">zip_path</span> <span class="o">=</span> <span class="n">zip_name</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span>
+    <span class="n">zip_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">zip_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/zip&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;attachment; filename=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sys_name</span> <span class="o">+</span> <span class="s1">&#39;.zip&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">zip_path</span><span class="p">)</span>
+    <span class="n">zip_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;rm &quot;</span> <span class="o">+</span> <span class="n">zip_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="delete_system"><a class="viewcode-back" href="../../modules/views.html#visual.views.delete_system">[docs]</a><span class="k">def</span> <span class="nf">delete_system</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deletes the system from database and from router_out.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;rm -rf data/router_p/&quot;</span> <span class="o">+</span> <span class="n">sys_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;/visual/&#39;</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">get_fast_rect_json</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;visual/static/data/fast_rect.json&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_fast_polygon_json</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;visual/static/data/fast_polygon.json&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_fast_path_json</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;visual/static/data/fast_path.json&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">json_data</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

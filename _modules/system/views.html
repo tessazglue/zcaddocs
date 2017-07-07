@@ -1,0 +1,576 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>system.views &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for system.views</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Views of system module - controls all pages within system tab</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="k">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render</span><span class="p">,</span> <span class="n">get_list_or_404</span><span class="p">,</span> <span class="n">redirect</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="k">import</span> <span class="n">HttpResponse</span>
+
+<span class="kn">from</span> <span class="nn">chiplet.models</span> <span class="k">import</span> <span class="n">Chiplet</span><span class="p">,</span> <span class="n">IO</span><span class="p">,</span> <span class="n">Config</span><span class="p">,</span> <span class="n">ConfigIO</span>
+<span class="kn">from</span> <span class="nn">system.models</span> <span class="k">import</span> <span class="n">Sys</span><span class="p">,</span> <span class="n">SysComponent</span><span class="p">,</span> <span class="n">SysNetlist</span>
+<span class="kn">from</span> <span class="nn">pnr.packer.packer</span> <span class="k">import</span> <span class="n">rect_packer</span>
+<span class="kn">from</span> <span class="nn">pnr.placer.main</span> <span class="k">import</span> <span class="n">zPlacer</span>
+<span class="kn">from</span> <span class="nn">system.tasks</span> <span class="k">import</span> <span class="n">run_system_task</span>
+
+<span class="kn">from</span> <span class="nn">system.serializers</span> <span class="k">import</span> <span class="n">SysSerializer</span><span class="p">,</span> <span class="n">SysNetlistSerializer</span>
+
+<span class="kn">from</span> <span class="nn">rest_framework</span> <span class="k">import</span> <span class="n">generics</span><span class="p">,</span> <span class="n">permissions</span><span class="p">,</span> <span class="n">renderers</span>
+<span class="kn">from</span> <span class="nn">rest_framework.decorators</span> <span class="k">import</span> <span class="n">api_view</span>
+<span class="kn">from</span> <span class="nn">rest_framework.response</span> <span class="k">import</span> <span class="n">Response</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;django&quot;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">SysList</span><span class="p">(</span><span class="n">generics</span><span class="o">.</span><span class="n">ListCreateAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">not_run</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">SysSerializer</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">System List View</span>
+<span class="sd">================================================================================</span>
+<span class="sd">- show a list of systems, and controls to view packing &amp; netlist</span>
+<span class="sd">- schematics view is prototype</span>
+<span class="sd">- control delete system, create system &amp; run system</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="all_systems"><a class="viewcode-back" href="../../modules/views.html#system.views.all_systems">[docs]</a><span class="k">def</span> <span class="nf">all_systems</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shows a list of all systems in the database that are not yet run</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">systems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">not_run</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">sys</span> <span class="ow">in</span> <span class="n">systems</span><span class="p">:</span>
+        <span class="n">sys_obj</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">sys_obj</span><span class="p">[</span><span class="s2">&quot;sys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span>
+        <span class="n">syscomps</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">()</span>
+        <span class="n">comp_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">syscomps</span><span class="p">:</span>
+            <span class="n">comp_obj</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">comp_obj</span><span class="p">[</span><span class="s2">&quot;comp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">mpn</span>
+            <span class="n">comp_obj</span><span class="p">[</span><span class="s2">&quot;cfg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">cfgname</span>
+            <span class="n">comp_obj</span><span class="p">[</span><span class="s2">&quot;proto&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">proto</span>
+            <span class="n">comp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_obj</span><span class="p">)</span>
+        <span class="n">sys_obj</span><span class="p">[</span><span class="s2">&quot;details&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp_list</span>
+        <span class="n">sys_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys_obj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/sysList.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sysList&#39;</span><span class="p">:</span> <span class="n">sys_list</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="run_system"><a class="viewcode-back" href="../../modules/views.html#system.views.run_system">[docs]</a><span class="k">def</span> <span class="nf">run_system</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pass sys_id to celery task for system-run to happen in background.</span>
+<span class="sd">    Update system run_state to 1 (which is IN-PROGRESS).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">run_system_task</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">system</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">run_state</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;/visual&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="delete_system"><a class="viewcode-back" href="../../modules/views.html#system.views.delete_system">[docs]</a><span class="k">def</span> <span class="nf">delete_system</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deletes a system by its ID.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system specified in URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">&quot;/system&quot;</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">Create System View</span>
+<span class="sd">================================================================================</span>
+<span class="sd">- create a new system</span>
+<span class="sd">- show netlist for user to check before saving</span>
+<span class="sd">- import a system</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="create_system"><a class="viewcode-back" href="../../modules/views.html#system.views.create_system">[docs]</a><span class="k">def</span> <span class="nf">create_system</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets all chiplets and corresponding configs for user to select.</span>
+<span class="sd">    Renders full netlist if &#39;POST&#39; request is received.</span>
+<span class="sd">    Note:</span>
+<span class="sd">        - store sysname and syscomponent in request session for use</span>
+<span class="sd">          in save_netlist view</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        - enable rotation of chiplet on visualization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">sysname</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="s1">&#39;sysname&#39;</span><span class="p">]</span>
+        <span class="n">chiplet_raw</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s1">&#39;chiplet[]&#39;</span><span class="p">)</span>
+        <span class="n">chiplet_selection</span> <span class="o">=</span> <span class="n">get_full_netlist</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">chiplet_raw</span><span class="p">)</span>
+        <span class="n">cfg_list</span> <span class="o">=</span> <span class="n">get_configs</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">chiplet_raw</span><span class="p">)</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;sysname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sysname</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;syscomponents&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg_list</span>
+
+        <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/createNetlist.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+            <span class="s1">&#39;chiplet_selection&#39;</span><span class="p">:</span> <span class="n">chiplet_selection</span><span class="p">,</span>
+            <span class="s1">&#39;sysname&#39;</span><span class="p">:</span> <span class="n">sysname</span>
+        <span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">full_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chiplet_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">chiplet</span> <span class="ow">in</span> <span class="n">chiplet_list</span><span class="p">:</span>
+            <span class="n">chiplet_obj</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;chiplet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chiplet</span>
+            <span class="n">chiplet_obj</span><span class="p">[</span><span class="s2">&quot;cfg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chiplet</span><span class="o">.</span><span class="n">get_cfgs</span><span class="p">()</span>
+            <span class="n">full_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chiplet_obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/createSystem.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;fullList&#39;</span><span class="p">:</span> <span class="n">full_list</span>
+    <span class="p">})</span></div>
+
+
+<span class="k">def</span> <span class="nf">import_system</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/importSystem.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+    <span class="p">})</span>
+
+
+<div class="viewcode-block" id="save_netlist"><a class="viewcode-back" href="../../modules/views.html#system.views.save_netlist">[docs]</a><span class="k">def</span> <span class="nf">save_netlist</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs packer to get packing information and save system,</span>
+<span class="sd">    system components and system netlist.</span>
+<span class="sd">    Note:</span>
+<span class="sd">        ubumpID defaults to -1, will be updated in placer.</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        - Sys hardcoded to S for now as app does not support other sizes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Run packer</span>
+    <span class="n">chiplet_set</span> <span class="o">=</span> <span class="n">get_chiplets</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;syscomponents&quot;</span><span class="p">]])</span>
+    <span class="n">components_placed</span> <span class="o">=</span> <span class="n">rect_packer</span><span class="p">(</span><span class="n">chiplet_set</span><span class="p">)</span>
+
+    <span class="c1"># Save system</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">Sys</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">sys_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;sysname&quot;</span><span class="p">]</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+    <span class="c1"># Save components</span>
+    <span class="n">syscomps</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;syscomponents&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">chiplet</span> <span class="ow">in</span> <span class="n">components_placed</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">SysComponent</span><span class="p">()</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">sys</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">chiplet</span> <span class="o">=</span> <span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;chip&quot;</span><span class="p">]</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">cen_x</span> <span class="o">=</span> <span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;cen_x&quot;</span><span class="p">]</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">cen_y</span> <span class="o">=</span> <span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;cen_y&quot;</span><span class="p">]</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">rot</span> <span class="o">=</span> <span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;rot&quot;</span><span class="p">]</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;chip&quot;</span><span class="p">],</span>
+                    <span class="n">cfgname</span><span class="o">=</span><span class="n">syscomps</span><span class="p">[</span><span class="n">chiplet</span><span class="p">[</span><span class="s2">&quot;chip&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">cid</span><span class="p">])</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="n">cfgio_list</span> <span class="o">=</span> <span class="n">ConfigIO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">cfg</span><span class="o">=</span><span class="n">b</span><span class="o">.</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">cfgio_list</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">SysNetlist</span><span class="p">()</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">syscomp</span> <span class="o">=</span> <span class="n">b</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">cfgio</span> <span class="o">=</span> <span class="n">f</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">ubumpid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">&quot;/system&quot;</span><span class="p">)</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">Packing View</span>
+<span class="sd">================================================================================</span>
+<span class="sd">- show placement of object in ID</span>
+<span class="sd">- download placement map csv</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="show_placement"><a class="viewcode-back" href="../../modules/views.html#system.views.show_placement">[docs]</a><span class="k">def</span> <span class="nf">show_placement</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get all chiplets and packing information and renders visualization</span>
+<span class="sd">    if &#39;GET&#39; request is received. Saves packing changes if &#39;POST&#39; request</span>
+<span class="sd">    is received.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system specified in URL</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        - enable rotation of chiplet on visualization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">post_dict</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">syscomp_dict</span> <span class="o">=</span> <span class="n">parse_request</span><span class="p">(</span><span class="n">post_dict</span><span class="p">)</span>
+        <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cid</span> <span class="ow">in</span> <span class="n">syscomp_dict</span><span class="p">:</span>
+            <span class="n">chiplet</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">cid</span><span class="p">)</span>
+            <span class="n">syscomp</span> <span class="o">=</span> <span class="n">SysComponent</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">chiplet</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+            <span class="n">syscomp</span><span class="o">.</span><span class="n">cen_x</span> <span class="o">=</span> <span class="n">syscomp_dict</span><span class="p">[</span><span class="n">cid</span><span class="p">][</span><span class="s2">&quot;cenx&quot;</span><span class="p">]</span>
+            <span class="n">syscomp</span><span class="o">.</span><span class="n">cen_y</span> <span class="o">=</span> <span class="n">syscomp_dict</span><span class="p">[</span><span class="n">cid</span><span class="p">][</span><span class="s2">&quot;ceny&quot;</span><span class="p">]</span>
+            <span class="n">syscomp</span><span class="o">.</span><span class="n">rot</span> <span class="o">=</span> <span class="n">syscomp_dict</span><span class="p">[</span><span class="n">cid</span><span class="p">][</span><span class="s2">&quot;rot&quot;</span><span class="p">]</span>
+            <span class="n">syscomp</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;/system/&#39;</span> <span class="o">+</span> <span class="n">sys_id</span> <span class="o">+</span> <span class="s1">&#39;/placement&#39;</span><span class="p">)</span>
+
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Sys</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">syscomp</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">SysComponent</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+    <span class="n">zplacer_obj</span> <span class="o">=</span> <span class="n">zPlacer</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">final_coords</span> <span class="o">=</span> <span class="n">zplacer_obj</span><span class="o">.</span><span class="n">place_system</span><span class="p">()</span>
+
+    <span class="n">syscomp_n_ball</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># get any one ball on each chiplet</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">syscomp</span><span class="p">:</span>
+        <span class="n">first_io</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">chiplet</span><span class="p">)[:</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">syscomp_n_ball</span><span class="o">.</span><span class="n">append</span><span class="p">({</span> <span class="s1">&#39;syscomp&#39;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span> <span class="s1">&#39;io&#39;</span><span class="p">:</span> <span class="n">first_io</span> <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/showPlacement.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;syscomp_n_ball&#39;</span><span class="p">:</span> <span class="n">syscomp_n_ball</span><span class="p">,</span>
+        <span class="s1">&#39;grid&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">final_coords</span><span class="p">),</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="dld_placement_csv"><a class="viewcode-back" href="../../modules/views.html#system.views.dld_placement_csv">[docs]</a><span class="k">def</span> <span class="nf">dld_placement_csv</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download placement grid csv</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zip_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data/placement_out/placement_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/csv&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;attachment; filename=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;placement_&#39;</span>
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="dld_ubump_csv"><a class="viewcode-back" href="../../modules/views.html#system.views.dld_ubump_csv">[docs]</a><span class="k">def</span> <span class="nf">dld_ubump_csv</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download placement ubump id mapping csv</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zip_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data/placement_out/ubump_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/csv&#39;</span><span class="p">)</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;attachment; filename=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;ubump_&#39;</span>
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">Schematics View</span>
+<span class="sd">================================================================================</span>
+<span class="sd">- unfinished prototype of schematics</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="show_schematics"><a class="viewcode-back" href="../../modules/views.html#system.views.show_schematics">[docs]</a><span class="k">def</span> <span class="nf">show_schematics</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get all chiplets and connection info and renders visualization.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system specified in URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Sys</span><span class="p">,</span> <span class="n">pk</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">syscomp_list</span> <span class="o">=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">SysComponent</span><span class="p">,</span> <span class="n">sys</span><span class="o">=</span><span class="n">sys</span><span class="p">)</span>
+
+    <span class="n">sysnetlist</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">syscomp</span> <span class="ow">in</span> <span class="n">syscomp_list</span><span class="p">:</span>
+        <span class="n">sysnetlist</span> <span class="o">+=</span> <span class="n">get_list_or_404</span><span class="p">(</span><span class="n">SysNetlist</span><span class="p">,</span> <span class="n">syscomp</span><span class="o">=</span><span class="n">syscomp</span><span class="p">)</span>
+
+    <span class="n">fastnn_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">sysnetlist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">fastnn</span> <span class="ow">in</span> <span class="n">fastnn_dict</span><span class="p">:</span>
+            <span class="n">fastnn_dict</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">fastnn</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;cid&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span>
+            <span class="s2">&quot;pnum&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">pnum</span><span class="p">,</span>
+            <span class="s2">&quot;sysnn&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">sysnn</span>
+            <span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fastnn_dict</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">fastnn</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s2">&quot;cid&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">chiplet</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span>
+            <span class="s2">&quot;pnum&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">pnum</span><span class="p">,</span>
+            <span class="s2">&quot;sysnn&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">cfgio</span><span class="o">.</span><span class="n">sysnn</span>
+            <span class="p">}]</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/showSchematics.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;syscomp&#39;</span><span class="p">:</span> <span class="n">syscomp_list</span><span class="p">,</span>
+        <span class="s1">&#39;sysnetlist&#39;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">fastnn_dict</span><span class="p">),</span>
+        <span class="p">})</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">Netlist View</span>
+<span class="sd">================================================================================</span>
+<span class="sd">- show netlist of system</span>
+<span class="sd">- unused edit netlist function</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="show_netlist"><a class="viewcode-back" href="../../modules/views.html#system.views.show_netlist">[docs]</a><span class="k">def</span> <span class="nf">show_netlist</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Show netlist of a system.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system specified in URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">())</span>
+    <span class="n">netlist</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_sysnetlist</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;show netlist!&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/viewNetlist.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;netlist&#39;</span><span class="p">:</span> <span class="n">netlist</span><span class="p">,</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="edit_netlist"><a class="viewcode-back" href="../../modules/views.html#system.views.edit_netlist">[docs]</a><span class="k">def</span> <span class="nf">edit_netlist</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Note:</span>
+<span class="sd">        Editing netlist to enter fastnn is deprecated.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sys_id: ID of system specified in URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">:</span>
+        <span class="n">post_dict</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">post_dict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;csrfmiddlewaretoken&quot;</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sysnet</span> <span class="o">=</span> <span class="n">SysNetlist</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sysnet_id</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+                <span class="n">sysnet</span><span class="o">.</span><span class="n">fastnn</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">sysnet</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s1">&#39;/system/&#39;</span> <span class="o">+</span> <span class="n">sys_id</span> <span class="o">+</span> <span class="s1">&#39;/netlist&#39;</span><span class="p">)</span>
+    <span class="n">sys</span> <span class="o">=</span> <span class="n">Sys</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sys_id</span><span class="o">=</span><span class="n">sys_id</span><span class="p">)</span>
+    <span class="n">comps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">get_syscomponents</span><span class="p">())</span>
+    <span class="n">netlist</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get_sysnetlist</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s1">&#39;system/editNetlist.html&#39;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;sys&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="p">,</span>
+        <span class="s1">&#39;netlist&#39;</span><span class="p">:</span> <span class="n">netlist</span><span class="p">,</span>
+        <span class="p">})</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">================================================================================</span>
+<span class="sd">Util functions</span>
+<span class="sd">================================================================================</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="get_chiplets"><a class="viewcode-back" href="../../modules/views.html#system.views.get_chiplets">[docs]</a><span class="k">def</span> <span class="nf">get_chiplets</span><span class="p">(</span><span class="n">chip_cids</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets all chiplet objects based on their CIDs.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        chip_cids: list of chiplet CIDs</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        chip_set: list of chiplet objects</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        - move this to custom model method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chip_set</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">chip_cid</span> <span class="ow">in</span> <span class="n">chip_cids</span><span class="p">:</span>
+        <span class="n">chip_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">chip_cid</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">chip_set</span></div>
+
+
+<div class="viewcode-block" id="get_full_netlist"><a class="viewcode-back" href="../../modules/views.html#system.views.get_full_netlist">[docs]</a><span class="k">def</span> <span class="nf">get_full_netlist</span><span class="p">(</span><span class="n">request_dict</span><span class="p">,</span> <span class="n">chiplet_raw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get full netlist based on POST request and list of chiplet CIDs</span>
+<span class="sd">    Args:</span>
+<span class="sd">        request_dict: POST request dictionary to get config name</span>
+<span class="sd">        chiplet_raw: list of chiplet CIDs</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        chiplet_selection: a list of dictionaries</span>
+<span class="sd">    Dict output format: (each row of net list is a dictionary)</span>
+<span class="sd">    [{</span>
+<span class="sd">        &#39;mpn&#39;: mpn,</span>
+<span class="sd">        &#39;cid&#39;: cid,</span>
+<span class="sd">        &#39;pname&#39;: pname,</span>
+<span class="sd">        &#39;pnum&#39;: pnum,</span>
+<span class="sd">        &#39;sigt&#39;: sigt,</span>
+<span class="sd">        .....</span>
+<span class="sd">    }]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chiplet_selection</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">chipID</span> <span class="ow">in</span> <span class="n">chiplet_raw</span><span class="p">:</span>
+        <span class="n">chiplet_rows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chiplet</span> <span class="o">=</span> <span class="n">Chiplet</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cid</span><span class="o">=</span><span class="n">chipID</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">chiplet</span><span class="p">,</span> <span class="n">cfgname</span><span class="o">=</span><span class="n">request_dict</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="n">chipID</span><span class="p">])</span>
+        <span class="n">io_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">IO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">chiplet</span><span class="o">=</span><span class="n">chiplet</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">io_set</span><span class="p">:</span>
+            <span class="n">io_row</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;mpn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chiplet</span><span class="o">.</span><span class="n">mpn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;cid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chiplet</span><span class="o">.</span><span class="n">cid</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;pname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">pname</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;pnum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">pnum</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;sigt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">sigt</span>
+            <span class="n">cfgIO</span> <span class="o">=</span> <span class="n">ConfigIO</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">io</span><span class="o">=</span><span class="n">io</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;cfgio_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">cfgio_id</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;tpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">tpu</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;tpd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">tpd</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;sysnn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">sysnn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;fastnn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">fastnn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;voltd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">voltd</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;fastconn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">fastconn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;rdlconn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">rdlconn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;ioconn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">ioconn</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;rpriority&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">rpriority</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;pvalue&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">pvalue</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;fastpassive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">fastpassive</span>
+            <span class="n">io_row</span><span class="p">[</span><span class="s2">&quot;iopassive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfgIO</span><span class="o">.</span><span class="n">iopassive</span>
+            <span class="n">chiplet_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">io_row</span><span class="p">)</span>
+        <span class="n">chiplet_selection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chiplet_rows</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">chiplet_selection</span></div>
+
+
+<div class="viewcode-block" id="get_configs"><a class="viewcode-back" href="../../modules/views.html#system.views.get_configs">[docs]</a><span class="k">def</span> <span class="nf">get_configs</span><span class="p">(</span><span class="n">request_dict</span><span class="p">,</span> <span class="n">chiplet_raw</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets all config names.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        request_dict: POST request dictionary to get config name</span>
+<span class="sd">        chiplet_raw: list of chiplet CIDs</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        cfg_list: list of config names</span>
+<span class="sd">    To Do:</span>
+<span class="sd">        - move this to custom model method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg_list</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">chipID</span> <span class="ow">in</span> <span class="n">chiplet_raw</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">request_dict</span><span class="o">.</span><span class="n">POST</span><span class="p">[</span><span class="n">chipID</span><span class="p">]</span>
+        <span class="n">cfg_list</span><span class="p">[</span><span class="n">chipID</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span>
+    <span class="k">return</span> <span class="n">cfg_list</span></div>
+
+
+<div class="viewcode-block" id="parse_request"><a class="viewcode-back" href="../../modules/views.html#system.views.parse_request">[docs]</a><span class="k">def</span> <span class="nf">parse_request</span><span class="p">(</span><span class="n">post_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse POST request dictionary to get dictionary of all elements</span>
+<span class="sd">    Args:</span>
+<span class="sd">        post_dict: POST request dictionary</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        fields: list of config names</span>
+<span class="sd">    Return Format:</span>
+<span class="sd">        {</span>
+<span class="sd">        &lt;num&gt;: {&lt;attr&gt;:&lt;value&gt;, &lt;attr&gt;:&lt;value&gt;...},</span>
+<span class="sd">        &lt;num&gt;: {&lt;attr&gt;:&lt;value&gt;, &lt;attr&gt;:&lt;value&gt;...}</span>
+<span class="sd">        ...</span>
+<span class="sd">        }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">post_dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;csrfmiddlewaretoken&quot;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># split cid+attr</span>
+            <span class="n">klist</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="n">num</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">klist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">num</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">obj</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">fields</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+
+    <span class="k">return</span> <span class="n">fields</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

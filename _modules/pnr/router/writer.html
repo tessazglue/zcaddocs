@@ -1,0 +1,423 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>pnr.router.writer &#8212; zCAD 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pnr.router.writer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Router App Output Files Writer</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">string</span> <span class="k">import</span> <span class="n">Template</span>
+<span class="kn">from</span> <span class="nn">pnr.router.utility.constant</span> <span class="k">import</span> <span class="n">Constant</span><span class="p">,</span> <span class="n">WriterConstant</span>
+
+
+<div class="viewcode-block" id="TilePrinter"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter">[docs]</a><span class="k">class</span> <span class="nc">TilePrinter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Writes routed TileGrid information to visualisation and tile programming files</span>
+
+<span class="sd">    FAST Visualisation:</span>
+<span class="sd">    $_row.gph</span>
+<span class="sd">    $_col.gph</span>
+<span class="sd">    $_uBump.gph</span>
+
+<span class="sd">    FAST Preset Verilog and Data:</span>
+<span class="sd">    $_presets.vs</span>
+<span class="sd">    $_presets.dat</span>
+
+<span class="sd">    FAST BootCfg Program Prototype:</span>
+<span class="sd">    $_bootcfg.dat</span>
+
+<span class="sd">    FAST Segger:</span>
+<span class="sd">    $_segger.csv</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sys_id</span><span class="p">,</span> <span class="n">tilegrid</span><span class="p">,</span> <span class="n">fnn_to_bid</span><span class="p">,</span> <span class="n">bid_to_ball</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span> <span class="o">=</span> <span class="n">tilegrid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span> <span class="o">=</span> <span class="n">fnn_to_bid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span> <span class="o">=</span> <span class="n">bid_to_ball</span>
+
+<div class="viewcode-block" id="TilePrinter.write_output"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_output">[docs]</a>    <span class="k">def</span> <span class="nf">write_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper method to run all writer methods</span>
+<span class="sd">        Creates directories if they do not exist</span>
+<span class="sd">        Params:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">WriterConstant</span><span class="o">.</span><span class="n">PATH</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">WriterConstant</span><span class="o">.</span><span class="n">PATH</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_row</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_col</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_ubump</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_presets_vs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_presets_dat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_bootcfg_dat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_to_segger_csv</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.get_filename"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.get_filename">[docs]</a>    <span class="k">def</span> <span class="nf">get_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Formulates absolute file path to output file</span>
+<span class="sd">        Args:</span>
+<span class="sd">            fname (str): name of the file to be written</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Absolute file path to file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">PATH</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_id</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">fname</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_row"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_row">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes all rowbit associations into GPH file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_row.gph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;row.gph&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROWBIT_SIZE</span><span class="p">):</span>
+                <span class="n">rowbit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="n">row</span><span class="p">]</span><span class="o">.</span><span class="n">bits</span><span class="p">[</span><span class="n">bit</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">rowbit</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+                    <span class="n">fnn</span> <span class="o">=</span> <span class="n">rowbit</span><span class="o">.</span><span class="n">fnn</span>
+                    <span class="n">snn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_snn</span><span class="p">(</span><span class="n">fnn</span><span class="p">)</span>
+                    <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">snn</span><span class="p">,</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">bit</span><span class="p">))</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_col"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_col">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_col</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes all column associations into GPH file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_col.gph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;col.gph&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">cols</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">is_occupied</span> <span class="ow">and</span> <span class="n">column</span><span class="o">.</span><span class="n">fnn</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">fnn</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">fnn</span>
+                <span class="n">snn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_snn</span><span class="p">(</span><span class="n">fnn</span><span class="p">)</span>
+                <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">snn</span><span class="p">,</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">col</span><span class="p">))</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_ubump"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_ubump">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_ubump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes all uBump associations into GPH file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_uBump.gph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;uBump.gph&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">is_occupied</span><span class="p">:</span>
+                    <span class="n">fnn</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">fnn</span>
+                    <span class="n">snn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_snn</span><span class="p">(</span><span class="n">fnn</span><span class="p">)</span>
+                    <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">snn</span><span class="p">,</span> <span class="n">fnn</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">))</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.fnn_to_snn"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.fnn_to_snn">[docs]</a>    <span class="k">def</span> <span class="nf">fnn_to_snn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fnn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the System Name associated to FNN</span>
+<span class="sd">        Args:</span>
+<span class="sd">            fnn (int)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: System Net Name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">fnn</span> <span class="o">==</span> <span class="n">Constant</span><span class="o">.</span><span class="n">FNN_GND</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;VSS&quot;</span>
+        <span class="k">elif</span> <span class="n">fnn</span> <span class="o">==</span> <span class="n">Constant</span><span class="o">.</span><span class="n">FNN_VDD</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;VDD&quot;</span>
+
+        <span class="n">bid_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fnn_to_bid</span><span class="p">[</span><span class="n">fnn</span><span class="p">]</span>
+        <span class="n">ball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bid_to_ball</span><span class="p">[</span><span class="n">bid_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">return</span> <span class="n">ball</span><span class="o">.</span><span class="n">snn</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_presets_vs"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_presets_vs">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_presets_vs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes tile information of all non-default tiles into VS file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_presets.vs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;presets.vs&quot;</span><span class="p">)</span>
+        <span class="n">ftemp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;pnr/router/utility/presets_template.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="n">ftemp</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tile</span><span class="o">.</span><span class="n">is_default</span><span class="p">():</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">pad_preset[</span><span class="si">%d</span><span class="s2">][</span><span class="si">%d</span><span class="s2">] = 10&#39;b</span><span class="si">%s</span><span class="s2">;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_code</span><span class="p">()))</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">// </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tile</span><span class="o">.</span><span class="n">gridcode_to_string</span><span class="p">())</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="p">)}</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_presets_dat"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_presets_dat">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_presets_dat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes gridcode of all tiles into DAT file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_presets.dat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;presets.dat&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_code</span><span class="p">()))</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_bootcfg_dat"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_bootcfg_dat">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_bootcfg_dat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes bootcfg data of all non-default tiles into DAT file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_bootcfg.dat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;bootcfg.dat&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">instr_addr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">instr_addr</span><span class="p">,</span> <span class="n">instr_data</span> <span class="o">=</span> <span class="n">bootcfg_write_signature</span><span class="p">(</span><span class="n">instr_addr</span><span class="p">)</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">instr_data</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tile</span><span class="o">.</span><span class="n">is_default</span><span class="p">():</span>
+                    <span class="n">csel</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_colcode</span><span class="p">()</span>
+                    <span class="n">rsel</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_rowcode</span><span class="p">()</span>
+                    <span class="n">pusel</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_pupcode</span><span class="p">()</span>
+                    <span class="n">pdsel</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_pdncode</span><span class="p">()</span>
+
+                    <span class="n">instr_addr</span><span class="p">,</span> <span class="n">instr_data</span> <span class="o">=</span> \
+                        <span class="n">bootcfg_write_tilepgm</span><span class="p">(</span><span class="n">instr_addr</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">pdsel</span><span class="p">,</span> <span class="n">pusel</span><span class="p">,</span> <span class="n">rsel</span><span class="p">,</span> <span class="n">csel</span><span class="p">)</span>
+                    <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">instr_data</span><span class="p">)</span>
+
+        <span class="n">instr_addr</span><span class="p">,</span> <span class="n">instr_data</span> <span class="o">=</span> <span class="n">bootcfg_write_done</span><span class="p">(</span><span class="n">instr_addr</span><span class="p">)</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">instr_data</span><span class="p">)</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TilePrinter.write_to_segger_csv"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.TilePrinter.write_to_segger_csv">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_segger_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes segger programming info of all tiles into CSV file</span>
+<span class="sd">        Args:</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            file: &lt;sys_id&gt;_segger.csv</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filename</span><span class="p">(</span><span class="s2">&quot;segger.csv&quot;</span><span class="p">)</span>
+        <span class="n">fopen</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">ROW_SIZE</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">COL_SIZE</span><span class="p">):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilegrid</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="n">addr</span> <span class="o">=</span> <span class="n">row</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="o">|</span> <span class="n">col</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+                <span class="n">fopen</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">get_code</span><span class="p">()))</span>
+        <span class="n">fopen</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span></div></div>
+
+
+<div class="viewcode-block" id="bootcfg_write_signature"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.bootcfg_write_signature">[docs]</a><span class="k">def</span> <span class="nf">bootcfg_write_signature</span><span class="p">(</span><span class="n">addr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Formulate first instruction frame for bootcfg file</span>
+<span class="sd">    Args:</span>
+<span class="sd">        addr (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Instructions in binary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># First Instruction Frame, the Signature</span>
+    <span class="c1"># 6&#39;b011011</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span> <span class="o">+</span>
+                                  <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span><span class="p">)]</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span> <span class="o">+</span>
+                                      <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span><span class="p">))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span> <span class="o">+</span>
+                                      <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span><span class="p">))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">addr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bootcfg_write_tilepgm"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.bootcfg_write_tilepgm">[docs]</a><span class="k">def</span> <span class="nf">bootcfg_write_tilepgm</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">pdsel</span><span class="p">,</span> <span class="n">pusel</span><span class="p">,</span> <span class="n">rsel</span><span class="p">,</span> <span class="n">csel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Formulate tile instruction frame for bootcfg file</span>
+<span class="sd">    Args:</span>
+<span class="sd">        addr (int)</span>
+<span class="sd">        row (int)</span>
+<span class="sd">        col (int)</span>
+<span class="sd">        pdsel (int)</span>
+<span class="sd">        pusel (int)</span>
+<span class="sd">        rsel (int)</span>
+<span class="sd">        csel (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Instructions in binary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tile_addr</span> <span class="o">=</span> <span class="n">row</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="o">|</span> <span class="n">col</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="c1"># First Word - Opc, Hdr</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_BOOT_TILEPGM</span> <span class="o">+</span>
+                                  <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span><span class="p">)]</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="c1"># Second Word - 1b PAD, tile_addr</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span> <span class="o">+</span> <span class="n">bootcfg_tile_addr_to_str</span><span class="p">(</span><span class="n">tile_addr</span><span class="p">)))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="c1"># Third Word - 6b PAD, PDSEL, PUSEL, RSEL, CSEL</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="s2">&quot;000000&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pdsel</span><span class="p">)</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pusel</span><span class="p">)</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">rsel</span><span class="p">)</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">csel</span><span class="p">)))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">addr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bootcfg_write_done"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.bootcfg_write_done">[docs]</a><span class="k">def</span> <span class="nf">bootcfg_write_done</span><span class="p">(</span><span class="n">addr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Formulate last instruction frame for bootcfg file</span>
+<span class="sd">    Args:</span>
+<span class="sd">        addr (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Instructions in binary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># First Word - Opc + Hdr</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_BOOT_DONE</span> <span class="o">+</span>
+                                  <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ONES_BYTE</span><span class="p">)]</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="c1"># Second Word - bypass</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span> <span class="o">+</span>
+                                      <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span><span class="p">))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="c1"># Third Word - 16b PAD</span>
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span> <span class="o">+</span>
+                                      <span class="n">WriterConstant</span><span class="o">.</span><span class="n">CODE_ZERO_BYTE</span><span class="p">))</span>
+    <span class="n">addr</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">addr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+<span class="c1"># 15-bit</span>
+<div class="viewcode-block" id="bootcfg_tile_addr_to_str"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.bootcfg_tile_addr_to_str">[docs]</a><span class="k">def</span> <span class="nf">bootcfg_tile_addr_to_str</span><span class="p">(</span><span class="n">tile_addr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts base 10 addr to binary</span>
+<span class="sd">    Args:</span>
+<span class="sd">        tile_addr (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Address in binary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{0:015b}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile_addr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bootcfg_str_builder"><a class="viewcode-back" href="../../../modules/router.html#pnr.router.writer.bootcfg_str_builder">[docs]</a><span class="k">def</span> <span class="nf">bootcfg_str_builder</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">str_</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;String formatter for bootcfg</span>
+<span class="sd">    Args:</span>
+<span class="sd">        addr (int)</span>
+<span class="sd">        str_ (str)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: One line of instruction in binary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">str_</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">zCAD</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/models.html">Django Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/views.html">Django Views</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/pnr.html">PnR Algorithms</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, software team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

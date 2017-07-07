@@ -1,0 +1,23 @@
+Django Views
+*********
+
+=========
+Chiplet
+=========
+
+.. automodule:: chiplet.views
+    :members:
+
+=========
+System
+=========
+
+.. automodule:: system.views
+    :members:
+
+=========
+Visual
+=========
+
+.. automodule:: visual.views
+    :members:
